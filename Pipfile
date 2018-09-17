@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+mitmproxy = "*"
+lxml = "*"
+termcolor = "*"
+docopt = "*"
+requests = "*"
+"boto3" = "*"
+requests-ntlm = "*"
+
+[dev-packages]
+ipython = "*"
+
+[requires]
+python_version = "3.7"
