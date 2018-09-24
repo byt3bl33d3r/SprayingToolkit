@@ -40,10 +40,7 @@ class Atomizer:
         self.threads = int(threads)
         self.debug = debug
 
-        if debug:
-            log_format = '%(threadName)10s %(name)18s: %(message)s'
-        else:
-            log_format = '%(message)s'
+        log_format = '%(threadName)10s %(name)18s: %(message)s' if debug else '%(message)s'
 
         logging.basicConfig(
             level=logging.DEBUG if debug else logging.INFO,
