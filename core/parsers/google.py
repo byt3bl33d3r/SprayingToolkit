@@ -1,25 +1,13 @@
-import logging
 import lxml.html
-from termcolor import colored
+from core.parsers.linkedin import linkedin_se_name_parser
 
 
 def google(content):
-    names = set()
+    names = []
     html = lxml.html.fromstring(content)
 
-    for person in html.xpath('//h3[@class="r"]//text()'):
-        logging.info(colored(person, 'yellow'))
-        try:
-            name, _ = person.split('-', 1)
-        except ValueError:
-            name, _ = person.split('|', 1)
-
-        try:
-            first, last = name.split()
-        except ValueError:
-            # This means there's some junk after the name and before the hyphen
-            first, last = name.split()[:2]
-
-        names.add((first, last))
+    for text in html.xpath('//h3[@class="LC20lb"]//text()'):
+        first, last = linkedin_se_name_parser(text)
+        names.append((first, last, text))
 
     return names

@@ -1,29 +1,15 @@
-import logging
 import lxml.html
-from termcolor import colored
+from core.parsers.linkedin import linkedin_se_name_parser
 
 
 def bing(content):
-    names = set()
+    names = []
     html = lxml.html.fromstring(content)
 
     for result in html.xpath('//li[@class="b_algo"]/h2/a'):
-        person = ''.join(result.xpath('.//text()'))
-        logging.info(colored(person, 'yellow'))
+        text = ''.join(result.xpath('.//text()'))
 
-        try:
-            name, _ = person.split('-', 1)
-        except ValueError:
-            name, _ = person.split('|', 1)
-
-        parts = name.split()
-        try:
-            first, last = parts
-        except ValueError:
-            # Cause people have middle names as well :(
-            if len(parts) == 3:
-                first, _, last = parts
-
-        names.add((first, last))
+        first, last = linkedin_se_name_parser(text)
+        names.append((first, last, text))
 
     return names

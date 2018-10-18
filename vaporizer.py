@@ -3,13 +3,13 @@ import asyncio
 from core.parsers import bing, google
 from core.utils.messages import print_good
 from atomizer import Atomizer
+from termcolor import colored
 from mitmproxy import ctx, exceptions, http
 
 
 class Vaporizer:
 
     def __init__(self):
-
         self.emails = set()
         self.atomizer = None
 
@@ -53,13 +53,20 @@ class Vaporizer:
             help="number of concurrent threads",
         )
 
+        loader.add_option(
+            name="no_spray",
+            typespec=bool,
+            default=False,
+            help="don't password spray, just parse emails",
+        )
+
     def running(self):
-        if not self.atomizer:
+        if not self.atomizer and not ctx.options.no_spray:
             self.atomizer = Atomizer(
                 loop=self.loop,
                 domain=ctx.options.domain,
                 password=ctx.options.password,
-
+                threads=ctx.options.threads
             )
 
             getattr(self.atomizer, ctx.options.sprayer.lower())()
@@ -76,13 +83,17 @@ class Vaporizer:
                     return
 
                 for name in names:
-                    first, last = name
+                    first, last, full_text = name
+                    ctx.log.info(colored(f"{full_text} => {first} {last}", "yellow"))
+
                     email = f"{ctx.options.email_format.format(first=first, last=last, f=first[:1], l=last[:1])}@{ctx.options.domain}".lower()
                     emails.append(email)
 
                 ctx.log.info(print_good(f"Generated {len(emails)} email(s)"))
 
-                asyncio.ensure_future(self.atomizer.atomize([email for email in emails if email not in self.emails]))
+                if self.atomizer:
+                    asyncio.ensure_future(self.atomizer.atomize([email for email in emails if email not in self.emails]))
+
                 self.emails |= set(emails)
         except KeyError:
             pass
@@ -93,7 +104,10 @@ class Vaporizer:
                 email_file.write(email + '\n')
 
         ctx.log.info(print_good(f"Dumped {len(self.emails)} email(s) to emails.txt"))
-        self.atomizer.shutdown()
+
+        if self.atomizer:
+            self.atomizer.shutdown()
+
         self.loop.stop()
         pending = asyncio.Task.all_tasks()
         self.loop.run_until_complete(asyncio.gather(*pending))
