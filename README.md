@@ -26,13 +26,13 @@ A blazing fast password sprayer for Lync/Skype For Business and OWA, built on As
 #### Usage
 ```
 Usage:
-    atomizer (lync|owa) <domain> <password> --userfile USERFILE [--threads THREADS] [--debug]
-    atomizer (lync|owa) <domain> --recon [--debug]
+    atomizer (lync|owa) <target> <password> --userfile USERFILE [--threads THREADS] [--debug]
+    atomizer (lync|owa) <target> --recon [--debug]
     atomizer -h | --help
     atomizer -v | --version
 
 Arguments:
-    domain     target domain
+    target     target domain or url
     password   password to spray
 
 Options:
@@ -55,10 +55,12 @@ Scrapes Google and Bing for LinkedIn profiles, automatically generates emails fr
 #### Usage
 
 ```
-mitmdump -s vaporizer.py --set sprayer=(lync|owa) --set domain=domain.com --set password=password --set email_format='{f}.{last}'
+mitmdump -s vaporizer.py --set sprayer=(lync|owa) --set domain=domain.com --set target=<domain or url to spray> --set password=password --set email_format='{f}.{last}'
 ```
 
 By default `email_format` is set to `{first}.{last}` pattern and is not a required argument.
+
+The `domain` parameter is the domain to use for generating emails from names, the `target` parameter is the domain or url to password spray
 
 Install the mitmproxy cert, set the proxy in your browser, go to google and/or bing and search (make sure to include the `/in`):
 

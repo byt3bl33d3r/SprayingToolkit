@@ -2,13 +2,13 @@
 
 """
 Usage:
-    atomizer (lync|owa) <domain> <password> --userfile USERFILE [--threads THREADS] [--debug]
-    atomizer (lync|owa) <domain> --recon [--debug]
+    atomizer (lync|owa) <target> <password> --userfile USERFILE [--threads THREADS] [--debug]
+    atomizer (lync|owa) <target> --recon [--debug]
     atomizer -h | --help
     atomizer -v | --version
 
 Arguments:
-    domain     target domain
+    target     target domain or url
     password   password to spray
 
 Options:
@@ -32,9 +32,9 @@ from core.sprayers import Lync, OWA
 
 
 class Atomizer:
-    def __init__(self, loop, domain, password, threads=3, debug=False):
+    def __init__(self, loop, target, password, threads=3, debug=False):
         self.loop = loop
-        self.domain = domain
+        self.target = target
         self.password = password
         self.sprayer = None
         self.threads = int(threads)
@@ -54,13 +54,13 @@ class Atomizer:
 
     def lync(self):
         self.sprayer = Lync(
-            domain=self.domain,
+            target=self.target,
             password=self.password,
         )
 
     def owa(self):
         self.sprayer = OWA(
-            domain=self.domain,
+            target=self.target,
             password=self.password,
         )
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     atomizer = Atomizer(
         loop=loop,
-        domain=args['<domain>'],
+        target=args['<target>'].lower(),
         password=args['<password>'],
         threads=args['--threads'],
         debug=args['--debug']

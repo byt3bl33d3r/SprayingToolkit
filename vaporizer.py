@@ -29,7 +29,14 @@ class Vaporizer:
             name="domain",
             typespec=str,
             default='',
-            help="target domain"
+            help="domain to use for email generation"
+        )
+
+        loader.add_option(
+            name="target",
+            typespec=str,
+            default='',
+            help="target domain or url to password spray"
         )
 
         loader.add_option(
@@ -64,7 +71,7 @@ class Vaporizer:
         if not self.atomizer and not ctx.options.no_spray:
             self.atomizer = Atomizer(
                 loop=self.loop,
-                domain=ctx.options.domain,
+                target=ctx.options.target,
                 password=ctx.options.password,
                 threads=ctx.options.threads
             )

@@ -7,9 +7,10 @@ from core.utils.messages import *
 
 
 class OWA:
-    def __init__(self, domain, password):
-        self.domain = domain
+    def __init__(self, target, password):
+        self.url = target if target.startswith('https://') or target.startswith('http://') else None
         self.password = password
+        self.domain = target if not self.url else None
         self.log = logging.getLogger('owasprayer')
         self.valid_accounts = set()
         self.autodiscover_url = None
@@ -19,17 +20,22 @@ class OWA:
         self.recon()
 
     def recon(self):
-        self.autodiscover_url = self.get_autodiscover_url(self.domain)
-        self.log.info(print_good(f"Using OWA autodiscover URL: {self.autodiscover_url}"))
+        if not self.url:
+            self.log.info(print_info("Trying to find autodiscover URL"))
+            self.autodiscover_url = self.get_autodiscover_url(self.domain)
+            self.log.info(print_good(f"Using OWA autodiscover URL: {self.autodiscover_url}"))
 
-        # https://github.com/sensepost/ruler/blob/master/ruler.go#L125
-        o365_owa_url = f"https://login.microsoftonline.com/{self.domain}/.well-known/openid-configuration"
-        r = requests.get(o365_owa_url, verify=False)
-        if r.status_code == 400:
-            self.log.info(print_good("OWA domain appears to be hosted internally"))
-        elif r.status_code == 200:
-            self.log.info(print_info("OWA domain appears to be hosted on Office365"))
-            self.O365 = True
+            # https://github.com/sensepost/ruler/blob/master/ruler.go#L125
+            o365_owa_url = f"https://login.microsoftonline.com/{self.domain}/.well-known/openid-configuration"
+            r = requests.get(o365_owa_url, verify=False)
+            if r.status_code == 400:
+                self.log.info(print_good("OWA domain appears to be hosted internally"))
+            elif r.status_code == 200:
+                self.log.info(print_info("OWA domain appears to be hosted on Office365"))
+                self.O365 = True
+        else:
+            self.autodiscover_url = self.url
+            self.log.info(print_info(f"Using '{self.autodiscover_url}' as URL"))
 
         # Stolen from https://github.com/dafthack/MailSniper
         #try:

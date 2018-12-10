@@ -20,10 +20,10 @@ class Aerosol:
 
     def load(self, loader):
         loader.add_option(
-            name="domain",
+            name="target",
             typespec=str,
             default='',
-            help="Domain"
+            help="Target domain or URL"
         )
 
         loader.add_option(
@@ -52,7 +52,7 @@ class Aerosol:
     def response(self, flow: http.HTTPFlow) -> None:
         try:
             if "html" in flow.response.headers["Content-Type"] and len(flow.response.content):
-                if ctx.options.domain in flow.request.host:
+                if ctx.options.target in flow.request.host:
                     html = lxml.html.fromstring(flow.response.content)
                     the_best_words = set(html.xpath('//text()'))
                     ctx.log.info(print_good(f"Got {len(the_best_words)} words, the best words..."))

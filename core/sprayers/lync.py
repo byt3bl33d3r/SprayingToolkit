@@ -9,8 +9,8 @@ from datetime import datetime
 
 
 class Lync:
-    def __init__(self, domain, password):
-        self.domain = domain
+    def __init__(self, target, password):
+        self.domain = target
         self.password = password
         self.log = logging.getLogger('lyncsprayer')
         self.valid_accounts = set()
@@ -20,6 +20,7 @@ class Lync:
         self.recon()
 
     def recon(self):
+        self.log.info(print_info("Trying to find autodiscover URL"))
         lync_url = f"https://lyncdiscover.{self.domain}"
         r = requests.get(lync_url, verify=False)
         if r.status_code == 200:
