@@ -43,7 +43,10 @@ class OWA:
             self.netbios_domain = self.get_owa_domain(self.autodiscover_url)
             self.log.info(print_good(f"Got internal domain name using OWA: {self.netbios_domain}"))
         except Exception as e:
-            self.log.error(print_bad(f"Error parsing internal domain name using OWA: {e}"))
+            self.log.error(print_bad(f"Error parsing internal domain name using OWA. This usually means OWA is being hosted internally at a custom URL."))
+            self.log.error("    Do some recon and pass the URL as the target :)\n")
+            self.log.error(print_bad(f"Full error: {e}"))
+
         #except Exception as e:
             #self.log.error(print_bad(f"Couldn't get domain from OWA autodiscover URL: {e}"))
             #self.netbios_domain = self.get_owa_domain(f"https://autodiscover.{self.domain}/EWS/Exchange.asmx")
