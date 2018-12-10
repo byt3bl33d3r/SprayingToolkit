@@ -33,11 +33,13 @@ class OWA:
 
         # Stolen from https://github.com/dafthack/MailSniper
         #try:
-        self.netbios_domain = self.get_owa_domain(self.autodiscover_url)
-        self.log.info(print_good(f"Got internal domain name using OWA: {self.netbios_domain}"))
+        try:
+            self.netbios_domain = self.get_owa_domain(self.autodiscover_url)
+            self.log.info(print_good(f"Got internal domain name using OWA: {self.netbios_domain}"))
+        except Exception as e:
+            self.log.error(print_bad(f"Error parsing internal domain name using OWA: {e}"))
         #except Exception as e:
             #self.log.error(print_bad(f"Couldn't get domain from OWA autodiscover URL: {e}"))
-
             #self.netbios_domain = self.get_owa_domain(f"https://autodiscover.{self.domain}/EWS/Exchange.asmx")
             #self.log.info(print_good(f"Got internal domain name using EWS: {self.netbios_domain}"))
 

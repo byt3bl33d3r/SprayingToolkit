@@ -218,9 +218,9 @@ def ntlmdecode(authenticate_header):
     try:
         st = base64.b64decode(st_raw)
     except Exception as e:
-        raise Exception(f"Input is not a valid base64-encoded string: {e}")
+        raise Exception(f"Input seems to be a non-valid base64-encoded string: '{authenticate_header}'")
 
-    if  not st[:8] == b'NTLMSSP\x00':
+    if not st[:8] == b'NTLMSSP\x00':
         raise Exception("NTLMSSP header not found at start of input string")
 
     ver_tup = struct.unpack("<i", st[8:12])

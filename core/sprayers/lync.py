@@ -99,17 +99,17 @@ class Lync:
         if 'Invalid STS request' in msg:
             log.error(print_bad('Invalid request was received by server, dumping request & response XML'))
             log.error(soap + '\n' + r.text)
-        elif 'To sign into this application the account must be added' in msg:
+        elif ('To sign into this application the account must be added' in msg) or ("The user account does not exist" in msg):
             log.info(print_bad(f"Authentication failed: {email}:{self.password} (Username does not exist)"))
         elif 'Error validating credentials' in msg:
             log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))
-            self.valid_accounts.add(email)
         elif 'you must use multi-factor' in msg.lower():
             log.info(print_good(f"Found Credentials: {email}:{self.password} (However, MFA is required)"))
             self.valid_accounts.add(email)
         else:
             log.info(print_good(f"Found credentials: {email}:{self.password}"))
             self.valid_accounts.add(email)
+            log.info(r.text)
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L397-L406
     def auth(self, email):
