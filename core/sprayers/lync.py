@@ -110,7 +110,8 @@ class Lync:
         else:
             log.info(print_good(f"Found credentials: {email}:{self.password}"))
             self.valid_accounts.add(email)
-            log.info(r.text)
+
+        log.debug(r.text)
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L397-L406
     def auth(self, email):
