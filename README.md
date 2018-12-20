@@ -27,6 +27,7 @@ A blazing fast password sprayer for Lync/Skype For Business and OWA, built on As
 ```
 Usage:
     atomizer (lync|owa) <target> <password> --userfile USERFILE [--threads THREADS] [--debug]
+    atomizer (lync|owa) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --recon [--debug]
     atomizer -h | --help
     atomizer -v | --version
@@ -39,9 +40,12 @@ Options:
     -h, --help               show this screen
     -v, --version            show version
     -u, --userfile USERFILE  file containing usernames (one per line)
+    -c, --csvfile CSVFILE    csv file containing usernames and passwords
     -t, --threads THREADS    number of concurrent threads to use [default: 3]
     -d, --debug              enable debug output
     --recon                  only collect info, don't password spray
+    --user-row-name NAME     username row title in CSV file [default: Email Address]
+    --pass-row-name NAME     password row title in CSV file [default: Password]
 ```
 
 ### Vaporizer
