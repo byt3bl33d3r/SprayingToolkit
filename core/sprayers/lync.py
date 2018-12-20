@@ -140,7 +140,7 @@ class Lync:
             "password": password
         }
 
-        r = requests.post(self.lync_auth_url, data=payload)
+        r = requests.post(self.lync_auth_url, data=payload, verify=False)
         try:
             r.json()['access_token']
             log.info(print_good(f"Found credentials: {username}:{password}"))
