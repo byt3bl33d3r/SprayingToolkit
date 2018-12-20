@@ -72,7 +72,6 @@ class Vaporizer:
             self.atomizer = Atomizer(
                 loop=self.loop,
                 target=ctx.options.target,
-                password=ctx.options.password,
                 threads=ctx.options.threads
             )
 
@@ -99,7 +98,12 @@ class Vaporizer:
                 ctx.log.info(print_good(f"Generated {len(emails)} email(s)"))
 
                 if self.atomizer:
-                    asyncio.ensure_future(self.atomizer.atomize([email for email in emails if email not in self.emails]))
+                    asyncio.ensure_future(
+                        self.atomizer.atomize(
+                            userfile=[email for email in emails if email not in self.emails],
+                            password=ctx.options.password
+                        )
+                    )
 
                 self.emails |= set(emails)
         except KeyError:

@@ -133,6 +133,7 @@ class Lync:
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L397-L406
     def auth(self, username, password):
         log = logging.getLogger(f"auth_lync({username})")
+
         payload = {
             "grant_type": "password",
             "username": username,

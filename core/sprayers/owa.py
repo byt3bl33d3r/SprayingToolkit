@@ -44,7 +44,7 @@ class OWA:
         except Exception as e:
             self.log.error(print_bad(f"Error parsing internal domain name using OWA. This usually means OWA is being hosted on-prem or the target has a hybrid AD deployment"))
             self.log.error("    Do some recon and pass the custom OWA URL as the target if you really want the internal domain name, password spraying can still continue though :)\n")
-            self.log.error(print_bad(f"Full error: {e}\n"))
+            self.log.error(f"    Full error: {e}\n")
 
         #except Exception as e:
             #self.log.error(print_bad(f"Couldn't get domain from OWA autodiscover URL: {e}"))
