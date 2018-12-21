@@ -2,7 +2,7 @@
 
 """
 Usage:
-    atomizer (lync|owa) <target> <password> --userfile USERFILE [--threads THREADS] [--debug]
+    atomizer (lync|owa) <target> <password> <userfile> [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --user-as-pass USERFILE [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --recon [--debug]
@@ -12,18 +12,18 @@ Usage:
 Arguments:
     target     target domain or url
     password   password to spray
+    userfile   file containing usernames (one per line)
 
 Options:
     -h, --help               show this screen
     -v, --version            show version
-    -u, --userfile USERFILE  file containing usernames (one per line)
     -c, --csvfile CSVFILE    csv file containing usernames and passwords
     -t, --threads THREADS    number of concurrent threads to use [default: 3]
     -d, --debug              enable debug output
     --recon                  only collect info, don't password spray
     --user-row-name NAME     username row title in CSV file [default: Email Address]
     --pass-row-name NAME     password row title in CSV file [default: Password]
-    --user-as-pass USERFILE  use the usernames in the specified file as the password
+    --user-as-pass USERFILE  use the usernames in the specified file as the password (one per line)
 """
 
 import logging
@@ -122,7 +122,7 @@ class Atomizer:
 
 
 if __name__ == "__main__":
-    args = docopt(__doc__, version="0.0.1dev")
+    args = docopt(__doc__, version="1.0.0dev")
     loop = asyncio.get_event_loop()
 
     atomizer = Atomizer(
@@ -134,11 +134,11 @@ if __name__ == "__main__":
 
     logging.debug(args)
 
-    for input_file in [args['--userfile'], args['--csvfile'], args['--user-as-pass']]:
+    for input_file in [args['<userfile>'], args['--csvfile'], args['--user-as-pass']]:
         if input_file:
             file_path = Path(input_file)
             if not file_path.exists() or not file_path.is_file():
-                logging.error(print_bad("Path to --userfile/--csvfile/--user-as-pass invalid!"))
+                logging.error(print_bad("Path to <userfile>/--csvfile/--user-as-pass invalid!"))
                 sys.exit(1)
 
     if args['lync']:
@@ -150,7 +150,16 @@ if __name__ == "__main__":
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, atomizer.shutdown)
 
-        if args['--csvfile']:
+        if args['<userfile>']:
+            with open(args['<userfile>']) as userfile:
+                    loop.run_until_complete(
+                        atomizer.atomize(
+                            userfile=userfile,
+                            password=args['<password>']
+                        )
+                    )
+
+        elif args['--csvfile']:
             with open(args['--csvfile']) as csvfile:
                     reader = csv.DictReader(csvfile)
                     loop.run_until_complete(
@@ -158,15 +167,6 @@ if __name__ == "__main__":
                             csvreader=reader,
                             user_row_name=args['--user-row-name'],
                             pass_row_name=args['--pass-row-name']
-                        )
-                    )
-
-        elif args['--userfile']:
-            with open(args['--userfile']) as userfile:
-                    loop.run_until_complete(
-                        atomizer.atomize(
-                            userfile=userfile,
-                            password=args['<password>']
                         )
                     )
 
