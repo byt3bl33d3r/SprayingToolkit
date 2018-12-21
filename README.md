@@ -133,7 +133,7 @@ Options:
 Reads names from STDIN, `--domain` is used to specify the domain manually:
 
 ```bash
-cat names.txt | ./spindrift --domain CONTOSO
+cat names.txt | ./spindrift.py --domain CONTOSO
 ```
 
 Reads names from `names.txt`, `--target` dynamically grabs the internal domain name from OWA (you can give it a domain or url)
