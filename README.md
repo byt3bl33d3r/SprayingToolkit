@@ -48,6 +48,24 @@ Options:
     --pass-row-name NAME     password row title in CSV file [default: Password]
 ```
 
+#### Examples
+
+```bash
+python atomizer.py owa contoso.com 'Fall2018' --userfile emails.txt
+```
+
+```bash
+python atomizer.py lync contoso.com 'Fall2018' --userfile emails.txt
+```
+
+```bash
+python atomizer lync contoso.com --csvfile accounts.csv
+```
+
+```bash
+python atomizer owa 'https://owa.contoso.com/autodiscover/autodiscover.xml' --recon
+```
+
 ### Vaporizer
 
 A port of [@OrOneEqualsOne](https://twitter.com/OrOneEqualsOne)'s [GatherContacts](https://github.com/clr2of8/GatherContacts) Burp extension to [mitmproxy](https://mitmproxy.org/) with some improvements.
@@ -56,9 +74,9 @@ Scrapes Google and Bing for LinkedIn profiles, automatically generates emails fr
 
 (Built on top of Atomizer)
 
-#### Usage
+#### Examples
 
-```
+```bash
 mitmdump -s vaporizer.py --set sprayer=(lync|owa) --set domain=domain.com --set target=<domain or url to spray> --set password=password --set email_format='{f}.{last}'
 ```
 
@@ -81,6 +99,39 @@ Scrapes all text from the target website and sends it to [AWS Comprehend](https:
 
 #### Usage
 
-```
+```bash
 mitmdump -s aerosol.py --set domain=domain.com
+```
+
+### Spindrift
+
+Converts names to active directory usernames (e.g `Alice Eve` => `CONTOSO\aeve`)
+
+#### Usage
+
+```
+Usage:
+    spindrift [<file>] (--target TARGET | --domain DOMAIN) [--format FORMAT]
+
+Arguments:
+    file    file containing names, can also read from stdin
+
+Options:
+    --target TARGET   optional domain or url to retrieve the internal domain name from OWA
+    --domain DOMAIN   manually specify the domain to append to each username
+    --format FORMAT   username format [default: {f}{last}]
+```
+
+#### Examples
+
+Reads names from STDIN, `--domain` is used to specify the domain manually:
+
+```bash
+cat names.txt | ./spindrift --domain CONTOSO
+```
+
+Reads names from `names.txt`, `--target` dynamically grabs the internal domain name from OWA (you can give it a domain or url)
+
+```bash
+python spindrift.py names.txt --target contoso.com
 ```

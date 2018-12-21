@@ -11,6 +11,7 @@ class Vaporizer:
 
     def __init__(self):
         self.emails = set()
+        self.names = set()
         self.atomizer = None
 
         self.loop = asyncio.get_event_loop()
@@ -91,6 +92,7 @@ class Vaporizer:
                 for name in names:
                     first, last, full_text = name
                     ctx.log.info(colored(f"{full_text} => {first} {last}", "yellow"))
+                    self.names.add(f"{first} {last}")
 
                     email = f"{ctx.options.email_format.format(first=first, last=last, f=first[:1], l=last[:1])}@{ctx.options.domain}".lower()
                     emails.append(email)
@@ -113,6 +115,10 @@ class Vaporizer:
         with open("emails.txt", "a+") as email_file:
             for email in self.emails:
                 email_file.write(email + '\n')
+
+        with open("names.txt", "a+") as name_file:
+            for name in self.names:
+                name_file.write(name + '\n')
 
         ctx.log.info(print_good(f"Dumped {len(self.emails)} email(s) to emails.txt"))
 
