@@ -28,6 +28,7 @@ A blazing fast password sprayer for Lync/Skype For Business and OWA, built on As
 Usage:
     atomizer (lync|owa) <target> <password> --userfile USERFILE [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
+    atomizer (lync|owa) <target> --user-as-pass USERFILE [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --recon [--debug]
     atomizer -h | --help
     atomizer -v | --version
@@ -46,6 +47,7 @@ Options:
     --recon                  only collect info, don't password spray
     --user-row-name NAME     username row title in CSV file [default: Email Address]
     --pass-row-name NAME     password row title in CSV file [default: Password]
+    --user-as-pass USERFILE  use the usernames in the specified file as the password
 ```
 
 #### Examples
@@ -60,6 +62,10 @@ python atomizer.py lync contoso.com 'Fall2018' --userfile emails.txt
 
 ```bash
 python atomizer lync contoso.com --csvfile accounts.csv
+```
+
+```bash
+python atomizer lync contoso.com --user-as-pass usernames.txt
 ```
 
 ```bash
@@ -111,7 +117,7 @@ Converts names to active directory usernames (e.g `Alice Eve` => `CONTOSO\aeve`)
 
 ```
 Usage:
-    spindrift [<file>] (--target TARGET | --domain DOMAIN) [--format FORMAT]
+    spindrift [<file>] (--target TARGET | --domain DOMAIN | --no-domain) [--format FORMAT]
 
 Arguments:
     file    file containing names, can also read from stdin
@@ -120,6 +126,7 @@ Options:
     --target TARGET   optional domain or url to retrieve the internal domain name from OWA
     --domain DOMAIN   manually specify the domain to append to each username
     --format FORMAT   username format [default: {f}{last}]
+    --no-domain       do not append a domain name
 ```
 
 #### Examples

