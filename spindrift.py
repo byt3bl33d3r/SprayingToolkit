@@ -20,7 +20,7 @@ from core.sprayers.owa import OWA
 
 def convert_to_ad_username(name, username_format, domain):
     first, last = name.strip().split()
-    username = username_format.format(first=first, last=last, f=first[:1], l=last[:1]).lower()
+    username = username_format.format(first=first, last=last, f=first[:1], l=last[:1])
     print(f"{domain.upper()}\\{username.lower()}")
 
 
