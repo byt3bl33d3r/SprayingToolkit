@@ -66,7 +66,7 @@ class Lync:
         return self.get_s4b_base_url(r['_links']['redirect']['href'])
 
     def get_internal_s4b_hostname(self, url):
-        r = requests.get(url)
+        r = requests.get(url, verify=False)
         return r.headers['X-MS-Server-Fqdn']
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L409
