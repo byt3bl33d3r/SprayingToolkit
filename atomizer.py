@@ -42,7 +42,7 @@ from pathlib import Path
 from docopt import docopt
 from core.utils.messages import *
 from core.sprayers import Lync, OWA
-from core.utils.time import countdown_timer
+from core.utils.time import countdown_timer, get_utc_time
 from core.webhooks import gchat, slack
 
 
@@ -83,6 +83,7 @@ class Atomizer:
         auth_function = self.sprayer.auth_O365 if self.sprayer.O365 else self.sprayer.auth
 
         log.debug('creating executor tasks')
+        logging.info(print_info(f"Starting spray at {get_utc_time()} UTC"))
         blocking_tasks = [
             self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=password))
             for username in userfile
@@ -99,6 +100,7 @@ class Atomizer:
         auth_function = self.sprayer.auth_O365 if self.sprayer.O365 else self.sprayer.auth
 
         log.debug('creating executor tasks')
+        logging.info(print_info(f"Starting spray at {get_utc_time()} UTC"))
         blocking_tasks = [
             self.loop.run_in_executor(self.executor, partial(auth_function, username=row[user_row_name], password=row[pass_row_name]))
             for row in csvreader
@@ -115,6 +117,7 @@ class Atomizer:
         auth_function = self.sprayer.auth_O365 if self.sprayer.O365 else self.sprayer.auth
 
         log.debug('creating executor tasks')
+        logging.info(print_info(f"Starting spray at {get_utc_time()} UTC"))
         blocking_tasks = [
             self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=username.strip().split('\\')[-1:][0]))
             for username in userfile
