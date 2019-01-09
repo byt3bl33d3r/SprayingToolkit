@@ -146,4 +146,7 @@ class Lync:
             log.info(print_good(f"Found credentials: {username}:{password}"))
             self.valid_accounts.add(username)
         except Exception as e:
-            log.info(print_bad(f"Invalid credentials: {username}:{password} ({e})"))
+            log.info(print_bad(f"Invalid credentials: {username}:{password}"))
+
+    def __str__(self):
+        return "lync"

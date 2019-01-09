@@ -1,7 +1,11 @@
+import time
+import datetime
 from datetime import timedelta, tzinfo
+from core.utils.messages import print_info
 
 # https://stackoverflow.com/questions/19654578/python-utc-datetime-objects-iso-format-doesnt-include-z-zulu-or-zero-offset
 # I have no clue what I'm doing here
+
 
 class simple_utc(tzinfo):
 
@@ -10,3 +14,20 @@ class simple_utc(tzinfo):
 
     def utcoffset(self, dt):
         return timedelta(0)
+
+
+# https://codereview.stackexchange.com/questions/199743/countdown-timer-in-python
+def countdown_timer(hours, minutes, seconds, now=datetime.datetime.now):
+    delay = datetime.timedelta(
+        hours=int(hours),
+        minutes=int(minutes),
+        seconds=int(seconds)
+    )
+
+    target = now()
+
+    one_second_later = datetime.timedelta(seconds=1)
+    for remaining in range(int(delay.total_seconds()), 0, -1):
+        target += one_second_later
+        print(print_info(f"{datetime.timedelta(seconds=remaining - 1)} remaining until next spray"), end="\r")
+        time.sleep((target - now()).total_seconds())
