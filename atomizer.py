@@ -2,11 +2,11 @@
 
 """
 Usage:
-    atomizer (lync|owa) <target> <password> <userfile> [--threads THREADS] [--debug]
-    atomizer (lync|owa) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>][--threads THREADS] [--debug]
-    atomizer (lync|owa) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
-    atomizer (lync|owa) <target> --user-as-pass USERFILE [--threads THREADS] [--debug]
-    atomizer (lync|owa) <target> --recon [--debug]
+    atomizer (lync|owa|imap) <target> <password> <userfile> [--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>][--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> --user-as-pass USERFILE [--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> --recon [--debug]
     atomizer -h | --help
     atomizer -v | --version
 
@@ -41,7 +41,7 @@ from functools import partial
 from pathlib import Path
 from docopt import docopt
 from core.utils.messages import *
-from core.sprayers import Lync, OWA
+from core.sprayers import Lync, OWA, IMAP
 from core.utils.time import countdown_timer, get_utc_time
 from core.webhooks import gchat, slack
 
@@ -73,6 +73,11 @@ class Atomizer:
 
     def owa(self):
         self.sprayer = OWA(
+            target=self.target
+        )
+    
+    def imap(self):
+        self.sprayer = IMAP(
             target=self.target
         )
 
@@ -155,6 +160,8 @@ if __name__ == "__main__":
         atomizer.lync()
     elif args['owa']:
         atomizer.owa()
+    elif args['imap']:
+        atomizer.imap()
 
     if not args['--recon']:
         for sig in (signal.SIGINT, signal.SIGTERM):
