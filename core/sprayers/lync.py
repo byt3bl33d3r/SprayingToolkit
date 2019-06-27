@@ -119,13 +119,13 @@ class Lync:
             log.error(soap + '\n' + r.text)
         elif ('the account must be added' in msg) or ("The user account does not exist" in msg):
             log.info(print_bad(f"Authentication failed: {username}:{password} (Username does not exist)"))
-        elif 'Error validating credentials' in msg:
-            log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
         elif 'you must use multi-factor' in msg.lower():
             log.info(print_good(f"Found Credentials: {username}:{password} (However, MFA is required)"))
             self.valid_accounts.add(username)
         elif 'No tenant-identifying information found' in msg:
             log.info(print_bad(f"Authentication failed: {username}:{password} (No tenant-identifying information found)"))
+        elif 'FailedAuthentication' in r.text: # Fallback
+            log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
         else:
             log.info(print_good(f"Found credentials: {username}:{password}"))
             self.valid_accounts.add(username)
