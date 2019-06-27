@@ -121,14 +121,14 @@ class Lync:
             log.info(print_bad(f"Authentication failed: {username}:{password} (Username does not exist)"))
         elif 'you must use multi-factor' in msg.lower():
             log.info(print_good(f"Found Credentials: {username}:{password} (However, MFA is required)"))
-            self.valid_accounts.add(username)
+            self.valid_accounts.add(f'{username}:{password}')
         elif 'No tenant-identifying information found' in msg:
             log.info(print_bad(f"Authentication failed: {username}:{password} (No tenant-identifying information found)"))
         elif 'FailedAuthentication' in r.text: # Fallback
             log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
         else:
             log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(username)
+            self.valid_accounts.add(f'{username}:{password}')
 
         log.debug(r.text)
 
@@ -146,7 +146,7 @@ class Lync:
         try:
             r.json()['access_token']
             log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(username)
+            self.valid_accounts.add(f'{username}:{password}')
         except Exception as e:
             log.info(print_bad(f"Invalid credentials: {username}:{password}"))
 
