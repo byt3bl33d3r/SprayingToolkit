@@ -11,6 +11,7 @@ docopt = "*"
 requests = "*"
 "boto3" = "*"
 requests-ntlm = "*"
+imapclient = "*"
 
 [dev-packages]
 ipython = "*"

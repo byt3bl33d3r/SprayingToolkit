@@ -26,11 +26,11 @@ A blazing fast password sprayer for Lync/Skype For Business and OWA, built on As
 #### Usage
 ```
 Usage:
-    atomizer (lync|owa) <target> <password> <userfile> [--threads THREADS] [--debug]
-    atomizer (lync|owa) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>][--threads THREADS] [--debug]
-    atomizer (lync|owa) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--threads THREADS] [--debug]
-    atomizer (lync|owa) <target> --user-as-pass USERFILE [--threads THREADS] [--debug]
-    atomizer (lync|owa) <target> --recon [--debug]
+    atomizer (lync|owa|imap) <target> <password> <userfile> [--targetPort PORT] [--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>] [--targetPort PORT][--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--targetPort PORT] [--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> --user-as-pass USERFILE [--targetPort PORT] [--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> --recon [--debug]
     atomizer -h | --help
     atomizer -v | --version
 
@@ -47,6 +47,7 @@ Options:
     -i, --interval TIME      spray at the specified interval [format: "H:M:S"]
     -t, --threads THREADS    number of concurrent threads to use [default: 3]
     -d, --debug              enable debug output
+    -p, --targetPort PORT    target port of the IMAP server (IMAP only) [default: 993]
     --recon                  only collect info, don't password spray
     --gchat URL              gchat webhook url for notification
     --slack URL              slack webhook url for notification
