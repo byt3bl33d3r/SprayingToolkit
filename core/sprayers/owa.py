@@ -90,7 +90,7 @@ class OWA:
         r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(username, password), verify=False)
         if r.status_code == 200:
             log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(username)
+            self.valid_accounts.add(f'{username}:{password}')
         else:
             log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
 
@@ -101,7 +101,7 @@ class OWA:
         r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(username, password), verify=False)
         if r.status_code == 200:
             log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(username)
+            self.valid_accounts.add(f'{username}:{password}')
         else:
             log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
 
