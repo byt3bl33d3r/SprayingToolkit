@@ -17,6 +17,16 @@ A set of Python scripts/utilities that *tries* to make password spraying attacks
   </a>
 </p>
 
+## Installation
+
+Install the pre-requisites with `pip3` as follows:
+
+```bash
+sudo -H pip3 install -r requirements.txt
+```
+
+Or use a Python virtual environment if you don't want to install the packages globally.
+
 ## Tool Overview
 
 ### Atomizer
@@ -59,27 +69,27 @@ Options:
 #### Examples
 
 ```bash
-python atomizer.py owa contoso.com 'Fall2018' emails.txt
+./atomizer.py owa contoso.com 'Fall2018' emails.txt
 ```
 
 ```bash
-python atomizer.py lync contoso.com 'Fall2018' emails.txt
+./atomizer.py lync contoso.com 'Fall2018' emails.txt
 ```
 
 ```bash
-python atomizer lync contoso.com --csvfile accounts.csv
+./atomizer lync contoso.com --csvfile accounts.csv
 ```
 
 ```bash
-python atomizer lync contoso.com --user-as-pass usernames.txt
+./atomizer lync contoso.com --user-as-pass usernames.txt
 ```
 
 ```bash
-python atomizer owa 'https://owa.contoso.com/autodiscover/autodiscover.xml' --recon
+./atomizer owa 'https://owa.contoso.com/autodiscover/autodiscover.xml' --recon
 ```
 
 ```bash
-python atomizer.py owa contoso.com passwords.txt emails.txt -i 0:45:00 --gchat <GCHAT_WEBHOOK_URL>
+./atomizer.py owa contoso.com passwords.txt emails.txt -i 0:45:00 --gchat <GCHAT_WEBHOOK_URL>
 ```
 
 ### Vaporizer
@@ -149,5 +159,5 @@ cat names.txt | ./spindrift.py --domain CONTOSO
 Reads names from `names.txt`, `--target` dynamically grabs the internal domain name from OWA (you can give it a domain or url)
 
 ```bash
-python spindrift.py names.txt --target contoso.com
+./spindrift.py names.txt --target contoso.com
 ```
