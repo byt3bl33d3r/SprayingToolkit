@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import lxml.html
 import asyncio
 import json
