@@ -31,6 +31,7 @@ class OWA:
                 self.log.info(print_good("OWA domain appears to be hosted internally"))
             elif r.status_code == 200:
                 self.log.info(print_info("OWA domain appears to be hosted on Office365"))
+                self.log.info(print_info("Using Office 365 autodiscover URL: https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml"))
                 self.O365 = True
         else:
             self.autodiscover_url = self.url
@@ -91,6 +92,9 @@ class OWA:
         if r.status_code == 200:
             log.info(print_good(f"Found credentials: {username}:{password}"))
             self.valid_accounts.add(f'{username}:{password}')
+        elif r.status_code == 456:
+            log.info(print_good(f"Found credentials: {username}:{password} - however cannot log in: please check manually (2FA, account locked...)"))
+            self.valid_accounts.add(f'{username}:{password} - check manually')
         else:
             log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
 
