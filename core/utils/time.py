@@ -28,7 +28,8 @@ def countdown_timer(hours, minutes, seconds, now=datetime.now):
     for remaining in range(int(delay.total_seconds()), 0, -1):
         target += one_second_later
         print(print_info(f"{timedelta(seconds=remaining - 1)} remaining until next spray"), end="\r")
-        time.sleep((target - now()).total_seconds())
+        duration = (target - now()).total_seconds()
+        if duration > 0: time.sleep(duration)
 
 
 def get_utc_time():
