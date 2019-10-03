@@ -25,12 +25,16 @@ def countdown_timer(hours, minutes, seconds, now=datetime.now):
     target = now()
 
     one_second_later = timedelta(seconds=1)
-    for remaining in range(int(delay.total_seconds()), 0, -1):
-        target += one_second_later
-        print(print_info(f"{timedelta(seconds=remaining - 1)} remaining until next spray"), end="\r")
-        duration = (target - now()).total_seconds()
-        if duration > 0: time.sleep(duration)
 
+    try:
+        for remaining in range(int(delay.total_seconds()), 0, -1):
+            target += one_second_later
+            print(print_info(f"{timedelta(seconds=remaining - 1)} remaining until next spray"), end="\r")
+            duration = (target - now()).total_seconds()
+            if duration > 0: time.sleep(duration)
+    except KeyboardInterrupt:
+        return False
+    return True
 
 def get_utc_time():
     return datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")

@@ -76,7 +76,7 @@ class Atomizer:
         self.sprayer = OWA(
             target=self.target
         )
-    
+
     def imap(self, port):
         self.sprayer = IMAP(
             target=self.target,
@@ -137,6 +137,13 @@ class Atomizer:
     def shutdown(self):
         self.sprayer.shutdown()
 
+def add_handlers(loop, callback):
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, callback)
+
+def remove_handlers(loop):
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.remove_signal_handler(sig)
 
 if __name__ == "__main__":
     args = docopt(__doc__, version="1.0.0dev")
@@ -166,8 +173,7 @@ if __name__ == "__main__":
         atomizer.imap(args['--targetPort'])
 
     if not args['--recon']:
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            loop.add_signal_handler(sig, atomizer.shutdown)
+        add_handlers(loop, atomizer.shutdown)
 
         if args['--interval']:
             popped_accts = 0
@@ -192,7 +198,10 @@ if __name__ == "__main__":
 
                             password = passwordfile.readline()
                             if password:
-                                countdown_timer(*args['--interval'].split(':'))
+                                remove_handlers(loop) # Intercept signals.
+                                # Wait for next interval and abort if the user hits Ctrl-C.
+                                if not countdown_timer(*args['--interval'].split(':')): break
+                                add_handlers(loop, atomizer.shutdown)
 
         elif args['<userfile>']:
             with open(args['<userfile>']) as userfile:
