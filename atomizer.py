@@ -38,6 +38,7 @@ import asyncio
 import concurrent.futures
 import sys
 import csv
+import os
 from functools import partial
 from pathlib import Path
 from docopt import docopt
@@ -205,6 +206,8 @@ if __name__ == "__main__":
 
         elif args['<userfile>']:
             with open(args['<userfile>']) as userfile:
+                    if os.path.isfile(args['<password>']):
+                      logging.info(print_info(f"This looks like a password file, but we're using it as the literal password, add --interval if you want it to be read as a file."))
                     loop.run_until_complete(
                         atomizer.atomize(
                             userfile=userfile,
