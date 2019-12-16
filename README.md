@@ -167,7 +167,7 @@ Reads names from `names.txt`, `--target` dynamically grabs the internal domain n
 Build the Docker container
 
 ```bash
-docker build -t sprayingtoolkit
+docker build -t sprayingtoolkit .
 ```
 
 Run the docker container with a specific tool
