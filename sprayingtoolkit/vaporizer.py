@@ -1,8 +1,8 @@
 import signal
 import asyncio
-from core.parsers import bing, google
-from core.utils.messages import print_good
-from atomizer import Atomizer
+from sprayingtoolkit.core.parsers import bing, google
+from sprayingtoolkit.core.utils.messages import print_good
+from sprayingtoolkit.atomizer import Atomizer
 from termcolor import colored
 from mitmproxy import ctx, exceptions, http
 
