@@ -12,7 +12,7 @@ A set of Python scripts/utilities that *tries* to make password spraying attacks
 ## Sponsors
 [<img src="https://www.blackhillsinfosec.com/wp-content/uploads/2016/03/BHIS-logo-L-300x300.png" width="100" height="100"/>](https://www.blackhillsinfosec.com/)
 [<img src="https://handbook.volkis.com.au/assets/img/Volkis_Logo_Landscape.svg" width="200" hspace="10"/>](https://volkis.com.au)
-[<img src="https://user-images.githubusercontent.com/5151193/85814618-b7ee7400-b73c-11ea-8ff1-f312dc6f0efd.png" width="200" vspace="21"/>](https://qomplx.com/blog/cyber/)
+[<img src="https://user-images.githubusercontent.com/5151193/85816789-a5773900-b742-11ea-9931-e14e7ca6f562.png" width="200" vspace="30"/>](https://qomplx.com/blog/cyber/)
 
 ## Installation
 
