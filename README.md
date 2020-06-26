@@ -9,13 +9,10 @@
 
 A set of Python scripts/utilities that *tries* to make password spraying attacks against Lync/S4B & OWA a lot quicker, less painful and more efficient.
 
-### Brought To You By
-
-<p align="center">
-  <a href="https://www.blackhillsinfosec.com/">
-    <img src="https://www.blackhillsinfosec.com/wp-content/uploads/2016/03/BHIS-logo-L-300x300.png" alt="blackhillsinfosec"/>
-  </a>
-</p>
+## Sponsors
+[<img src="https://www.blackhillsinfosec.com/wp-content/uploads/2016/03/BHIS-logo-L-300x300.png" width="100" height="100"/>](https://www.blackhillsinfosec.com/)
+[<img src="https://handbook.volkis.com.au/assets/img/Volkis_Logo_Landscape.svg" width="200" hspace="10"/>](https://volkis.com.au)
+[<img src="https://user-images.githubusercontent.com/5151193/85814618-b7ee7400-b73c-11ea-8ff1-f312dc6f0efd.png" width="200" vspace="21"/>](https://qomplx.com/blog/cyber/)
 
 ## Installation
 
