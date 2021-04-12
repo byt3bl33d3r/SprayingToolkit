@@ -33,6 +33,21 @@ sudo -H pip3 install -r requirements.txt
 
 Or use a Python virtual environment if you don't want to install the packages globally.
 
+### Docker
+
+**Build**
+
+```bash
+docker build -t sprayingtoolkit .
+```
+
+**Run (examples)**
+
+```bash
+docker run -it --rm -v "${PWD}:/host" --entrypoint atomizer.py sprayingtoolkit --help
+docker run -it --rm -v "${PWD}:/host" --entrypoint spindrift.py sprayingtoolkit --help
+```
+
 ## Tool Overview
 
 ### Atomizer
