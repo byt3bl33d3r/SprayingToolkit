@@ -89,26 +89,34 @@ class OWA:
         log = logging.getLogger(f"auth_owa_O365({username})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(username, password), verify=False, proxies=proxy)
-        if r.status_code == 200:
-            log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(f'{username}:{password}')
-        elif r.status_code == 456:
-            log.info(print_good(f"Found credentials: {username}:{password} - however cannot log in: please check manually (2FA, account locked...)"))
-            self.valid_accounts.add(f'{username}:{password} - check manually')
+        try:
+            r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(username, password), verify=False, proxies=proxy)
+        except BaseException as e:
+            log.error(print_bad(f"Error during authentication: {e}"))
         else:
-            log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+            if r.status_code == 200:
+                log.info(print_good(f"Found credentials: {username}:{password}"))
+                self.valid_accounts.add(f'{username}:{password}')
+            elif r.status_code == 456:
+                log.info(print_good(f"Found credentials: {username}:{password} - however cannot log in: please check manually (2FA, account locked...)"))
+                self.valid_accounts.add(f'{username}:{password} - check manually')
+            else:
+                log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
 
     def auth(self, username, password, proxy):
         log = logging.getLogger(f"auth_owa({username})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(username, password), verify=False, proxies=proxy)
-        if r.status_code == 200:
-            log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(f'{username}:{password}')
+        try:
+            r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(username, password), verify=False, proxies=proxy)
+        except BaseException as e:
+            log.error(print_bad(f"Error during authentication: {e}"))
         else:
-            log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+            if r.status_code == 200:
+                log.info(print_good(f"Found credentials: {username}:{password}"))
+                self.valid_accounts.add(f'{username}:{password}')
+            else:
+                log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
 
     def __str__(self):
         return "OWA"
