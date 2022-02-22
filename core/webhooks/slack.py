@@ -11,4 +11,7 @@ def slack(webhook_url, target, sprayer):
 
     message_headers = {'Content-Type': 'application/json; charset=UTF-8'}
 
-    requests.post(webhook_url, headers=message_headers, json=bot_message)
+    try:
+        requests.post(webhook_url, headers=message_headers, json=bot_message)
+    except BaseException as e:
+        logging.error(f"Error during webhook notification: {e}")
