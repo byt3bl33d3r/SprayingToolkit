@@ -2,11 +2,11 @@
 
 """
 Usage:
-    atomizer (lync|owa|imap) <target> <password> <userfile> [--targetPort PORT] [--threads THREADS] [--debug]
-    atomizer (lync|owa|imap) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>] [--targetPort PORT][--threads THREADS] [--debug]
-    atomizer (lync|owa|imap) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--targetPort PORT] [--threads THREADS] [--debug]
-    atomizer (lync|owa|imap) <target> --user-as-pass USERFILE [--targetPort PORT] [--threads THREADS] [--debug]
-    atomizer (lync|owa|imap) <target> --recon [--debug]
+    atomizer (lync|owa|imap) <target> <password> <userfile> [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT][--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> --user-as-pass USERFILE [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--debug]
+    atomizer (lync|owa|imap) <target> --recon [--debug] [--proxy PROXY]
     atomizer -h | --help
     atomizer -v | --version
 
@@ -24,6 +24,7 @@ Options:
     -t, --threads THREADS    number of concurrent threads to use [default: 3]
     -d, --debug              enable debug output
     -p, --targetPort PORT    target port of the IMAP server (IMAP only) [default: 993]
+    -x, --proxy PROXY        use proxy on requests
     --recon                  only collect info, don't password spray
     --gchat URL              gchat webhook url for notification
     --slack URL              slack webhook url for notification
@@ -48,12 +49,19 @@ from core.webhooks import gchat, slack
 
 
 class Atomizer:
-    def __init__(self, loop, target, threads=3, debug=False):
+    def __init__(self, loop, target, threads=3, debug=False, proxy=None):
         self.loop = loop
         self.target = target
         self.sprayer = None
         self.threads = int(threads)
         self.debug = debug
+        if proxy is None:
+            self.proxy = None
+        else:
+            self.proxy = {
+                'http': proxy,
+                'https': proxy,
+            }
 
         log_format = '%(threadName)10s %(name)18s: %(message)s' if debug else '%(message)s'
 
@@ -74,7 +82,8 @@ class Atomizer:
 
     def owa(self):
         self.sprayer = OWA(
-            target=self.target
+            target=self.target,
+            proxy=self.proxy
         )
 
     def imap(self, port):
@@ -92,10 +101,9 @@ class Atomizer:
         log.debug('creating executor tasks')
         logging.info(print_info(f"Starting spray at {get_utc_time()} UTC"))
         blocking_tasks = [
-            self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=password))
+            self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=password, proxy=self.proxy))
             for username in userfile
         ]
-
         log.debug('waiting for executor tasks')
         await asyncio.wait(blocking_tasks)
         log.debug('exiting')
@@ -153,7 +161,8 @@ if __name__ == "__main__":
         loop=loop,
         target=args['<target>'].lower(),
         threads=args['--threads'],
-        debug=args['--debug']
+        debug=args['--debug'],
+        proxy=args['--proxy']
     )
 
     logging.debug(args)
