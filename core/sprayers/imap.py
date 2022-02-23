@@ -1,4 +1,5 @@
 import logging
+import time
 from core.utils.messages import print_good, print_bad
 import imapclient
 
@@ -17,7 +18,8 @@ class IMAP:
 
         self.log.info(print_good(f"Dumped {len(self.valid_accounts)} valid accounts to imap_valid_accounts.txt"))
 
-    def auth_O365(self, username, password):
+    def auth_O365(self, username, password, proxy, sleep):
+        # TODO: use socks proxy
         log = logging.getLogger(f"auth_imap_O365({username})")
         try:
             server = imapclient.IMAPClient(self.target, port=self.port, ssl=True, timeout=3)
@@ -29,6 +31,7 @@ class IMAP:
         except Exception as e:
             self.log.error(print_bad(f"Error communicating with the IMAP server"))
             self.log.error(f"    Full error: {e}\n")
+        time.sleep(sleep)
 
     def __str__(self):
         return "IMAP"

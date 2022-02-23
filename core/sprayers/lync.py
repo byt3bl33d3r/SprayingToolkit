@@ -1,6 +1,7 @@
 from lib2to3.pytree import Base
 import logging
 import requests
+import time
 import urllib.parse as urlparse
 from datetime import timedelta
 from requests.exceptions import ConnectionError
@@ -72,7 +73,7 @@ class Lync:
         return r.headers['X-MS-Server-Fqdn']
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L409
-    def auth_O365(self, username, password, proxy):
+    def auth_O365(self, username, password, proxy, sleep):
         log = logging.getLogger(f"auth_lync_O365({username})")
 
         utc_time = datetime.utcnow().replace(tzinfo=simple_utc()).isoformat()
@@ -137,9 +138,10 @@ class Lync:
                 self.valid_accounts.add(f'{username}:{password}')
 
             log.debug(r.text)
+            time.sleep(sleep)
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L397-L406
-    def auth(self, username, password):
+    def auth(self, username, password, proxy, sleep):
         log = logging.getLogger(f"auth_lync({username})")
 
         payload = {
@@ -149,7 +151,7 @@ class Lync:
         }
 
         try:
-            r = requests.post(self.lync_auth_url, data=payload, verify=False)
+            r = requests.post(self.lync_auth_url, data=payload, verify=False, proxies=proxy)
         except BaseException as e:
             log.error(print_bad(f"Error during authentication: {e}"))
         else:
@@ -159,6 +161,7 @@ class Lync:
                 self.valid_accounts.add(f'{username}:{password}')
             except Exception as e:
                 log.info(print_bad(f"Invalid credentials: {username}:{password}"))
+            time.sleep(sleep)
 
     def __str__(self):
         return "lync"

