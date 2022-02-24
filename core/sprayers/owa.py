@@ -8,7 +8,7 @@ from core.utils.messages import *
 
 
 class OWA:
-    def __init__(self, target, proxy=None):
+    def __init__(self, target, proxy=None, force_o365=False):
         self.url = target if target.startswith('https://') or target.startswith('http://') else None
         self.domain = target if not self.url else None
         self.log = logging.getLogger('owasprayer')
@@ -19,6 +19,7 @@ class OWA:
         self.proxy = proxy
 
         self.recon()
+        self.O365 = force_o365 if force_o365 else self.O365
 
     def recon(self):
         if not self.url:
@@ -91,6 +92,9 @@ class OWA:
         log = logging.getLogger(f"auth_owa_O365({username})")
 
         headers = {"Content-Type": "text/xml"}
+        # extend headers when using Fireprox
+        if 'amazonaws.com/fireprox' in self.autodiscover_url:
+            headers['X-My-X-Forwarded-For'] = '127.0.0.1'
         try:
             r = requests.get(self.autodiscover_url, auth=(username, password), verify=False, proxies=proxy)
         except BaseException as e:
@@ -111,6 +115,9 @@ class OWA:
         log = logging.getLogger(f"auth_owa({username})")
 
         headers = {"Content-Type": "text/xml"}
+        # extend headers when using Fireprox
+        if 'amazonaws.com/fireprox' in self.autodiscover_url:
+            headers['X-My-X-Forwarded-For'] = '127.0.0.1'
         try:
             r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(username, password), verify=False, proxies=proxy)
         except BaseException as e:

