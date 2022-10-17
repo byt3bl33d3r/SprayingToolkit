@@ -1,4 +1,4 @@
-## Deprecation Notice
+# Deprecation Notice
 
 This project is no longer maintained. The following alternative projects are better and actively maintained:
 
