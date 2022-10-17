@@ -1,3 +1,10 @@
+## Deprecation Notice
+
+This project is no longer maintained. The following alternative projects are better and actively maintained:
+
+- [TREVORspray](https://github.com/blacklanternsecurity/TREVORspray)
+- [CredMaster](https://github.com/knavesec/CredMaster)
+
 # SprayingToolkit
 
 <p align="center">
