@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 from datetime import timedelta, tzinfo
-from core.utils.messages import print_info
+from sprayingtoolkit.core.utils.messages import print_info
 
 # https://stackoverflow.com/questions/19654578/python-utc-datetime-objects-iso-format-doesnt-include-z-zulu-or-zero-offset
 # I have no clue what I'm doing here

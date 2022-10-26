@@ -1,5 +1,5 @@
 import logging
-from core.utils.messages import print_good, print_bad
+from sprayingtoolkit.core.utils.messages import print_good, print_bad
 import imapclient
 
 class IMAP:

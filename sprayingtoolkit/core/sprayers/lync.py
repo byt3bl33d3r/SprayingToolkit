@@ -3,8 +3,8 @@ import requests
 import urllib.parse as urlparse
 from datetime import timedelta
 from requests.exceptions import ConnectionError
-from core.utils.messages import *
-from core.utils.time import simple_utc
+from sprayingtoolkit.core.utils.messages import *
+from sprayingtoolkit.core.utils.time import simple_utc
 from lxml import etree
 from datetime import datetime
 

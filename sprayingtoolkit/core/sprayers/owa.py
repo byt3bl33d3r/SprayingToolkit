@@ -2,8 +2,8 @@ import logging
 import requests
 from requests_ntlm import HttpNtlmAuth
 from requests.exceptions import ConnectionError
-from core.utils.ntlmdecoder import ntlmdecode
-from core.utils.messages import *
+from sprayingtoolkit.core.utils.ntlmdecoder import ntlmdecode
+from sprayingtoolkit.core.utils.messages import *
 
 
 class OWA:

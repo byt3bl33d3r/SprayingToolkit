@@ -41,10 +41,10 @@ import csv
 from functools import partial
 from pathlib import Path
 from docopt import docopt
-from core.utils.messages import *
-from core.sprayers import Lync, OWA, IMAP
-from core.utils.time import countdown_timer, get_utc_time
-from core.webhooks import gchat, slack
+from sprayingtoolkit.core.utils.messages import *
+from sprayingtoolkit.core.sprayers import Lync, OWA, IMAP
+from sprayingtoolkit.core.utils.time import countdown_timer, get_utc_time
+from sprayingtoolkit.core.webhooks import gchat, slack
 
 
 class Atomizer:
@@ -145,7 +145,7 @@ def remove_handlers(loop):
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.remove_signal_handler(sig)
 
-if __name__ == "__main__":
+def main():
     args = docopt(__doc__, version="1.0.0dev")
     loop = asyncio.get_event_loop()
 
@@ -228,3 +228,6 @@ if __name__ == "__main__":
                     loop.run_until_complete(atomizer.atomize_user_as_pass(userfile))
 
         atomizer.shutdown()
+
+if __name__ == "__main__":
+    main()

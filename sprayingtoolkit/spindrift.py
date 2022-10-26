@@ -15,7 +15,7 @@ Options:
 
 import sys
 from docopt import docopt
-from core.sprayers.owa import OWA
+from sprayingtoolkit.core.sprayers.owa import OWA
 
 
 def convert_to_ad_username(name, username_format, domain):
@@ -24,7 +24,7 @@ def convert_to_ad_username(name, username_format, domain):
     print(f"{domain.upper()}\\{username.lower()}" if domain else username.lower())
 
 
-if __name__ == '__main__':
+def main():
 
     args = docopt(__doc__)
     contents = open(args['<file>']) if args['<file>'] else sys.stdin
@@ -40,3 +40,6 @@ if __name__ == '__main__':
 
     for line in contents:
         convert_to_ad_username(line, args['--format'], domain)
+
+if __name__ == '__main__':
+    main()

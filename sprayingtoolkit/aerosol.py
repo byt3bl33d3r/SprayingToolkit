@@ -6,7 +6,7 @@ import json
 import boto3
 import signal
 import os
-from core.utils.messages import print_info, print_good
+from sprayingtoolkit.core.utils.messages import print_info, print_good
 from mitmproxy import http, ctx
 #from IPython import embed
 
