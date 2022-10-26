@@ -214,7 +214,11 @@ def pretty_print_response(st):
 
 
 def ntlmdecode(authenticate_header):
-    _, st_raw = authenticate_header.split(',')[0].split()
+    for element in authenticate_header.split(','):
+        fields = element.split()
+        if fields[0] == 'NTLM':
+            st_raw = fields[1]
+            break
     try:
         st = base64.b64decode(st_raw)
     except Exception as e:
