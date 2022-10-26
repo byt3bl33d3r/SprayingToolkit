@@ -174,3 +174,17 @@ Reads names from `names.txt`, `--target` dynamically grabs the internal domain n
 ```bash
 ./spindrift.py names.txt --target contoso.com
 ```
+
+## Docker
+
+Build the Docker container
+
+```bash
+docker build -t sprayingtoolkit .
+```
+
+Run the docker container with a specific tool
+
+```bash
+docker run -t sprayingtoolkt /spraying/<tool> <args>
+```
