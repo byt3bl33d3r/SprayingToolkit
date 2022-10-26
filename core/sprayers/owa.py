@@ -57,7 +57,10 @@ class OWA:
             for username in self.valid_accounts:
                 account_file.write(username + '\n')
 
-        self.log.info(print_good(f"Dumped {len(self.valid_accounts)} valid accounts to owa_valid_accounts.txt"))
+        if len(self.valid_accounts) == 0:
+            self.log.info(print_bad(f"Dumped {len(self.valid_accounts)} valid accounts to owa_valid_accounts.txt"))
+        else:
+            self.log.info(print_good(f"Dumped {len(self.valid_accounts)} valid accounts to owa_valid_accounts.txt"))
 
     def get_owa_domain(self, url):
         # Stolen from https://github.com/dafthack/MailSniper
