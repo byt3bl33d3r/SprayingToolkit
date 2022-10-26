@@ -35,6 +35,8 @@ Come hang out on Discord!
 Install the pre-requisites with `pip3` as follows:
 
 ```bash
+# Kali GNU/Linux 2020.4
+sudo apt-get install libxml2-dev libxslt-dev python-dev lib32z1-dev
 sudo -H pip3 install -r requirements.txt
 ```
 
