@@ -3,7 +3,10 @@ def linkedin_se_name_parser(text):
     try:
         name, _ = text.split('-', 1)
     except ValueError:
-        name, _ = text.split('|', 1)
+        try:
+            name, _ = text.split('|', 1)
+        except ValueError:
+            return ('', '')
 
     parts = name.split()
     if len(parts) == 2:

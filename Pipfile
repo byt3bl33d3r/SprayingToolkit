@@ -12,6 +12,7 @@ requests = "*"
 "boto3" = "*"
 requests-ntlm = "*"
 imapclient = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 ipython = "*"
